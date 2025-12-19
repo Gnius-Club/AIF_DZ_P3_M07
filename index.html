@@ -1,858 +1,603 @@
 <!DOCTYPE html>
-<html lang="es-MX">
+<html lang="es">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
-  <title>El Jardín de la Amistad: Sembradores de Alegría</title>
-  <style>
-    /*
-    ======================================================
-    EL JARDÍN DE LA AMISTAD — Juego educativo (single-file)
-    ------------------------------------------------------
-    • Objetivo (Ciudadanía Digital): Elegir mensajes y contenidos
-      que promuevan un ambiente respetuoso y empático.
-    • Plataforma: Desktop y Tablet (mouse + touch).
-    • Accesibilidad activa por defecto: Voz, Subtítulos, Alto contraste.
-    • Este archivo contiene HTML+CSS+JS (sin librerías externas).
-    • Docentes: busquen la sección // CONFIG para frases/colores.
-    ======================================================
-    */
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>El Jardín de la Amistad: Edición Master</title>
+    <style>
+        /* --- ESTILOS GENERALES --- */
+        * { box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; font-family: 'Segoe UI', sans-serif; }
 
-    :root {
-      --bg: #0e1b24;            /* Fondo base (alto contraste) */
-      --bg-soft: #152836;       /* Suave */
-      --text: #ffffff;          /* Texto */
-      --text-dim: #d6e1ea;      /* Texto secundario */
-      --accent: #00c2ff;        /* Azul vibrante */
-      --accent-2: #00ffa6;      /* Verde menta */
-      --accent-3: #ffd000;      /* Amarillo */
-      --danger: #ff4d6d;        /* Rosa/rojo amable */
-      --ok: #7dff7a;            /* Verde pastel */
-      --panel: rgba(255,255,255,0.08);
-      --panel-2: rgba(255,255,255,0.15);
-      --shadow: 0 10px 30px rgba(0,0,0,0.25);
+        /* --- FONDO --- */
+        #game-world {
+            position: relative; width: 100%; height: 100%; display: flex; flex-direction: column; overflow: hidden;
+            transition: background 1s;
+        }
+        
+        /* Filtros */
+        .gray-filter { filter: grayscale(100%) contrast(0.9); transition: filter 1s ease; }
 
-      /* Jardín gris → vibrante */
-      --garden-gray-1: #6b7a85;
-      --garden-gray-2: #3e515d;
-      --garden-vibrant-1: #51e2f5;
-      --garden-vibrant-2: #14b8a6;
+        /* Capas de Fondo Dinámicas */
+        .sky { flex: 2; background: linear-gradient(to bottom, #87CEEB, #E0F7FA); position: relative; z-index: 1; transition: background 1s;}
+        .ground { flex: 1; background: linear-gradient(to bottom, #7CFC00, #228B22); position: relative; z-index: 2; margin-bottom: 90px; transition: background 1s;}
 
-      --seed-size: 88px;        /* Tamaño táctil mínimo >64px */
-      --radius-2xl: 28px;
-      --radius-xl: 22px;
-      --radius-lg: 16px;
-      --radius-md: 12px;
+        /* Variaciones de Nivel (Clases aplicadas por JS) */
+        .level-2 .sky { background: linear-gradient(to bottom, #5f788a, #aab7b8); } /* Nublado */
+        .level-2 .ground { background: linear-gradient(to bottom, #556B2F, #2F4F4F); }
+        .level-3 .sky { background: linear-gradient(to bottom, #FFDAB9, #FFEFD5); } /* Atardecer */
+        .level-3 .ground { background: linear-gradient(to bottom, #deb887, #8B4513); } /* Tierra/Parquet */
 
-      --subtitle-bg: rgba(0,0,0,0.55);
-    }
+        /* Nubes / Elementos flotantes */
+        .cloud {
+            position: absolute; background: #fff; border-radius: 50px; opacity: 0.8;
+            animation: floatCloud 25s infinite linear;
+        }
+        .cloud::after, .cloud::before { content: ''; position: absolute; background: #fff; border-radius: 50%; }
+        .c1 { width: 100px; height: 40px; top: 10%; left: -10%; }
+        .c1::after { width: 50px; height: 50px; top: -25px; left: 15px; }
+        .c1::before { width: 40px; height: 40px; top: -15px; left: 50px; }
+        @keyframes floatCloud { 0% { transform: translateX(-150px); } 100% { transform: translateX(120vw); } }
 
-    /* Color-blind friendly: usar íconos+formas, no solo color */
-    .daltonic .pattern {
-      background-image: conic-gradient(from 45deg, transparent 0 25%, rgba(255,255,255,0.16) 0 50%, transparent 0 75%, rgba(255,255,255,0.16) 0);
-      background-size: 16px 16px;
-      mix-blend-mode: screen;
-    }
+        /* --- PERSONAJES --- */
+        .characters-container {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; display: flex; justify-content: space-around; align-items: flex-end;
+            padding-bottom: 130px; z-index: 10;
+        }
+        .char-zone {
+            position: relative; width: 30%; height: 320px;
+            display: flex; flex-direction: column; align-items: center; justify-content: flex-end;
+            pointer-events: auto; transition: transform 0.3s ease;
+        }
+        .avatar { font-size: 4.5rem; transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 12; cursor: pointer; }
+        
+        .bubble {
+            background: white; padding: 10px 12px; border-radius: 15px; position: absolute; top: 10px;
+            font-size: 0.85rem; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            max-width: 140px; min-width: 100px; transition: opacity 0.5s; font-weight: bold; color: #333;
+        }
+        .bubble::after {
+            content: ''; position: absolute; bottom: -10px; left: 50%; transform: translateX(-50%);
+            border-width: 10px 10px 0; border-style: solid; border-color: white transparent transparent transparent;
+        }
 
-    html, body { height: 100%; }
-    body {
-      margin: 0;
-      font-family: ui-rounded, system-ui, -apple-system, Segoe UI, Roboto, "Noto Sans", "Helvetica Neue", Arial, "Apple Color Emoji", "Segoe UI Emoji";
-      background: var(--bg);
-      color: var(--text);
-      overflow: hidden; /* pantalla completa */
-    }
+        /* Efectos Decorativos */
+        .decor {
+            position: absolute; font-size: 2.5rem; opacity: 0; transform: scale(0);
+            transition: all 0.6s cubic-bezier(0.68, -0.55, 0.27, 1.55); z-index: 11;
+        }
+        .decor.bloomed { opacity: 1; transform: scale(1); }
+        .happy-anim { animation: happyJump 0.6s ease infinite; }
+        @keyframes happyJump { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-20px); } }
 
-    #app { position: relative; width: 100vw; height: 100vh; }
+        /* --- UI SEMILLAS --- */
+        .seed-bar {
+            position: absolute; bottom: 0; left: 0; width: 100%; height: 110px;
+            background: rgba(255, 255, 255, 0.95); border-top: 5px solid #8B4513;
+            display: flex; justify-content: space-around; align-items: center; z-index: 100;
+            box-shadow: 0 -5px 15px rgba(0,0,0,0.2); padding-bottom: 10px;
+        }
+        .seed-container { display: flex; flex-direction: column; align-items: center; width: 22%; }
+        
+        .seed {
+            width: 55px; height: 55px; border-radius: 50%; display: flex; justify-content: center; align-items: center;
+            font-size: 1.8rem; cursor: grab; transition: transform 0.2s; position: relative;
+            background: #ddd; border: 3px solid #999; box-shadow: 0 4px 5px rgba(0,0,0,0.2);
+        }
+        .seed:active { cursor: grabbing; transform: scale(1.1); }
+        
+        .seed-label { font-size: 0.75rem; margin-top: 6px; font-weight: bold; color: #444; text-align: center; line-height: 1.1; }
 
-    /* Botones y toggles */
-    .btn {
-      display: inline-flex; align-items: center; justify-content: center;
-      padding: 14px 20px; border-radius: var(--radius-xl);
-      border: none; background: var(--accent); color: #00212e;
-      font-weight: 800; letter-spacing: 0.3px; font-size: 18px;
-      box-shadow: var(--shadow); cursor: pointer; user-select: none;
-      transition: transform .1s ease, filter .2s ease;
-    }
-    .btn:hover { filter: brightness(1.05); }
-    .btn:active { transform: scale(0.98); }
-    .btn.ghost { background: var(--panel-2); color: var(--text); }
-    .btn.disabled, .btn[disabled] { opacity: .5; pointer-events: none; }
+        /* Colores de Semillas */
+        .seed[data-color="orange"] { background: #FFAF40; border-color: #d35400; }
+        .seed[data-color="yellow"] { background: #FFF200; border-color: #f39c12; }
+        .seed[data-color="green"]  { background: #7CFC00; border-color: #27ae60; }
+        .seed[data-color="blue"]   { background: #3498db; border-color: #2980b9; }
+        .seed[data-color="pink"]   { background: #FFB7B2; border-color: #E74C3C; } /* Amor/Consuelo */
+        .seed[data-color="purple"] { background: #D2B4DE; border-color: #8E44AD; } /* Ayuda */
+        .seed[data-color="teal"]   { background: #A2D9CE; border-color: #16A085; } /* Calma */
+        .seed[data-color="red"]    { background: #ff6b6b; border-color: #c0392b; } /* Distractor */
 
-    .chip-toggle { display:flex; gap:8px; flex-wrap: wrap; }
-    .chip {
-      display:inline-flex; align-items:center; gap:8px;
-      background: var(--panel); border:2px solid var(--panel-2);
-      border-radius: 999px; padding: 10px 14px; font-weight: 700;
-      cursor: pointer; user-select: none; font-size: 14px;
-    }
-    .chip input { display:none; }
-    .chip.active { outline: 3px solid var(--accent); background: rgba(0,194,255,0.15); }
+        /* Clon arrastrable */
+        .dragging-clone {
+            position: fixed; pointer-events: none; z-index: 1000; width: 70px; height: 70px;
+            border-radius: 50%; display: flex; justify-content: center; align-items: center;
+            font-size: 2.2rem; opacity: 0.9; box-shadow: 0 10px 20px rgba(0,0,0,0.4);
+        }
 
-    /* HEADER (icono ajustes accesibilidad) */
-    .topbar {
-      position:absolute; inset: 16px 16px auto auto; z-index: 30;
-      display:flex; gap:8px;
-    }
-    .icon-btn { width:46px; height:46px; border-radius: 14px; background: var(--panel);
-      display:grid; place-items:center; cursor:pointer; border:2px solid var(--panel-2); }
+        /* --- MENSAJES --- */
+        #level-indicator {
+            position: absolute; top: 10px; left: 10px; background: rgba(255,255,255,0.8);
+            padding: 5px 15px; border-radius: 20px; font-weight: bold; color: #333; z-index: 50;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
 
-    /* PANTALLA INICIO */
-    .screen { position:absolute; inset:0; display:grid; place-items:center; }
-    .card {
-      width:min(950px, 92vw); background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.03));
-      border: 2px solid var(--panel-2); border-radius: var(--radius-2xl);
-      box-shadow: var(--shadow); padding: 26px; backdrop-filter: blur(8px);
-    }
-    .title { font-size: clamp(28px, 6vw, 56px); line-height: 1.05; margin: 8px 0 6px; }
-    .subtitle { color: var(--text-dim); margin: 0 0 22px; font-size: clamp(14px, 2.1vw, 18px); }
+        #message-toast {
+            position: absolute; top: 20%; left: 50%; transform: translateX(-50%);
+            background: rgba(0,0,0,0.8); color: white; padding: 12px 25px; border-radius: 25px;
+            font-size: 1.1rem; opacity: 0; pointer-events: none; transition: opacity 0.3s;
+            z-index: 200; text-align: center; width: 80%;
+        }
 
-    .start-grid { display:grid; grid-template-columns: 1.2fr .8fr; gap: 24px; align-items: center; }
-    @media (max-width: 920px) {
-      .start-grid { grid-template-columns: 1fr; }
-    }
+        #modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.7); display: none; justify-content: center; align-items: center;
+            flex-direction: column; z-index: 300; backdrop-filter: blur(5px); animation: fadeIn 0.5s;
+        }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-    .hero-garden {
-      height: clamp(240px, 40vh, 360px);
-      border-radius: var(--radius-2xl);
-      background: linear-gradient(160deg, var(--garden-gray-1), var(--garden-gray-2));
-      position: relative; overflow: hidden; border:2px solid var(--panel-2);
-    }
-    .hero-garden .flower { position:absolute; width:18px; height:18px; border-radius: 50%; background: var(--accent-2);
-      left: var(--x); bottom: var(--y); transform-origin: bottom center; transform: scale(0);
-      animation: grow 2s ease forwards; box-shadow: 0 0 0 6px rgba(255,255,255,0.06);
-    }
-    .hero-garden .flower::after { content:""; position:absolute; inset:-10px; border: 8px solid var(--accent-3); border-radius:50%; opacity:.8; }
-    @keyframes grow { to { transform: scale(1); } }
+        .modal-content {
+            background: white; padding: 30px; border-radius: 20px; text-align: center;
+            max-width: 90%; width: 400px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        .modal-content h2 { margin: 0 0 15px; color: #2ecc71; font-size: 2rem; }
+        .modal-content p { font-size: 1.2rem; color: #555; margin-bottom: 25px; }
+        
+        button.btn-action {
+            background: #3498db; color: white; border: none; padding: 12px 25px;
+            font-size: 1.2rem; border-radius: 10px; cursor: pointer;
+            box-shadow: 0 4px 0 #2980b9; transition: transform 0.1s; width: 100%;
+        }
+        button.btn-action:active { transform: translateY(4px); box-shadow: none; }
 
-    /* MODAL Cómo se juega */
-    .modal-backdrop { position: fixed; inset:0; background: rgba(0,0,0,0.55);
-      display:none; align-items:center; justify-content:center; z-index: 50; }
-    .modal { width:min(900px, 92vw); background: var(--bg-soft); border: 2px solid var(--panel-2);
-      border-radius: var(--radius-2xl); box-shadow: var(--shadow); padding: 22px; }
-    .modal h3 { margin: 0 0 14px; }
-    .steps { display:grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
-    .step-card { background: var(--panel); border:2px solid var(--panel-2); border-radius: 18px; padding: 14px; text-align:center; }
-    .illus { height: 140px; border-radius: 14px; border:2px dashed rgba(255,255,255,0.2); display:grid; place-items:center; margin-bottom: 8px; }
-
-    /* GARDEN canvas */
-    .garden {
-      position:absolute; inset: 0; overflow:hidden;
-      background: linear-gradient(180deg, var(--garden-gray-1), var(--garden-gray-2));
-      transition: background 1s ease;
-    }
-    .garden.vibrant {
-      background: linear-gradient(180deg, var(--garden-vibrant-1), var(--garden-vibrant-2));
-    }
-
-    .soil { position:absolute; left:0; right:0; bottom:0; height: 30%; background: linear-gradient(180deg, rgba(0,0,0,0.0), rgba(0,0,0,0.35)); }
-
-    .guardian { position:absolute; left: 24px; bottom: 24px; width: 160px; height: 160px; border-radius: 24px;
-      background: radial-gradient(circle at 40% 35%, #ffe6a8 0 40%, #ffc56d 41% 70%, #e3a354 71% 100%);
-      box-shadow: var(--shadow); border:2px solid var(--panel-2);
-    }
-    .guardian::after { /* sonrisa */
-      content:""; position:absolute; left:50%; top:55%; width: 60px; height: 30px; transform: translateX(-50%);
-      border-bottom: 8px solid #57350d; border-radius: 0 0 60px 60px;
-    }
-    .bubble {
-      position:absolute; left: 200px; bottom: 140px; background: var(--subtitle-bg);
-      border: 2px solid var(--panel-2); border-radius: 18px; padding: 10px 14px; font-weight:800;
-      backdrop-filter: blur(6px);
-    }
-
-    /* FRIENDS */
-    .friend { position:absolute; width: 160px; height: 200px; outline: none; }
-    .avatar { width: 100%; height: 100%; border-radius: 22px; background: radial-gradient(circle at 40% 30%, #ffd9b3 0 40%, #ffbf80 41% 68%, #f5a85a 69%);
-      border:2px solid var(--panel-2); box-shadow: var(--shadow); position:relative; display:grid; place-items:center; }
-    .friend .label { position:absolute; top:-38px; left:50%; transform:translateX(-50%); background: var(--subtitle-bg);
-      border:2px solid var(--panel-2); border-radius: 999px; font-weight:800; padding:6px 10px; }
-    .friend .state { position:absolute; top:-78px; left:50%; transform:translateX(-50%); font-size: 28px; }
-
-    /* Simple caritas */
-    .eyes { position:absolute; top:35%; left:0; right:0; display:flex; justify-content:space-evenly; }
-    .eye { width: 22px; height: 22px; background:#222; border-radius:50%; box-shadow: 0 0 0 6px rgba(0,0,0,0.1) inset; }
-    .mouth { position:absolute; top:64%; left:50%; transform:translateX(-50%); width:66px; height: 22px; border-bottom:8px solid #222; border-radius: 0 0 66px 66px; }
-    .mouth.sad { transform: translateX(-50%) rotate(180deg); top:60%; }
-
-    /* Seed bar */
-    .seedbar { position:absolute; left:50%; transform:translateX(-50%); bottom: 18px; display:flex; gap: 12px; padding: 10px; background: var(--panel);
-      border:2px solid var(--panel-2); border-radius: var(--radius-2xl); z-index: 20; }
-    .seed { width: var(--seed-size); height: var(--seed-size); border-radius: 22px; background: #10212a;
-      border:2px solid var(--panel-2); display:grid; place-items:center; font-size: 38px; cursor: grab; position:relative; }
-    .seed:active { cursor: grabbing; }
-    .seed[data-tooltip]::after { content: attr(data-tooltip); position:absolute; left:50%; bottom: calc(100% + 8px);
-      transform: translateX(-50%); background: var(--subtitle-bg); border:2px solid var(--panel-2); border-radius:12px; padding:6px 10px; white-space:nowrap; font-size:13px; opacity:0; pointer-events:none; transition:.2s; }
-    .seed:hover::after { opacity:1; }
-    .seed.selected { outline: 4px solid var(--accent); }
-
-    /* HUD */
-    .hud { position:absolute; left: 18px; top: 18px; display:flex; gap: 12px; align-items:center; z-index: 20; }
-    .joy-wrap { width: 260px; height: 20px; background: #0a141b; border:2px solid var(--panel-2); border-radius: 99px; overflow:hidden; }
-    .joy-bar { height:100%; width:0%; background: linear-gradient(90deg, #52ffa8, #b2ff59, #fff176); transition: width .3s ease; }
-    .counter { background: var(--panel); border:2px solid var(--panel-2); border-radius: 12px; padding: 6px 10px; font-weight:800; }
-
-    .hud .btn { padding:8px 12px; font-size:14px; }
-
-    /* Draggable ghost */
-    .ghost { position: fixed; z-index: 1000; pointer-events:none; transform: translate(-50%, -50%); }
-
-    /* Partículas mágicas */
-    .particle { position: absolute; width: 8px; height: 8px; border-radius: 50%; background: #fff; opacity: 0; animation: puff .8s ease forwards; }
-    @keyframes puff { 0% { transform: translate(0,0) scale(.6); opacity:1; } 100% { transform: translate(var(--dx), var(--dy)) scale(0); opacity:0; } }
-
-    /* Mariposas */
-    .butterfly { position:absolute; width: 22px; height: 16px; background: radial-gradient(circle at 30% 50%, #fff 0 30%, #ffd3f7 31%); border-radius: 10px 10px 8px 8px; animation: fly 6s linear infinite; }
-    .butterfly::after { content:""; position:absolute; width: 22px; height: 16px; right:-18px; top:0; background: radial-gradient(circle at 70% 50%, #fff 0 30%, #b3f6ff 31%); border-radius: 8px 8px 10px 10px; }
-    @keyframes fly { 0% { transform: translateY(0) translateX(0) } 50% { transform: translateY(-40px) translateX(40px) } 100% { transform: translateY(0) translateX(0) } }
-
-    /* Espinas */
-    .thorn { position:absolute; width:0; height:0; border-left:10px solid transparent; border-right:10px solid transparent; border-bottom:22px solid #2f0f1e; opacity:.9; }
-
-    /* Subtítulos */
-    .subtitles { position:absolute; left:50%; bottom: 92px; transform: translateX(-50%);
-      background: var(--subtitle-bg); border: 2px solid var(--panel-2); border-radius: 12px; padding: 8px 12px; font-weight:800;
-      max-width: 90vw; text-align:center; z-index: 40; backdrop-filter: blur(4px);
-    }
-
-    /* Settings sheet */
-    .settings { position: absolute; right: 16px; top: 72px; width: 320px; background: var(--bg-soft);
-      border:2px solid var(--panel-2); border-radius: 18px; box-shadow: var(--shadow); padding: 14px; display:none; z-index: 40; }
-    .settings h4 { margin: 6px 0 10px; }
-    .row { display:flex; align-items:center; justify-content:space-between; gap: 10px; padding: 6px 0; }
-
-    /* Pantalla Victoria */
-    .victory { position:absolute; inset:0; display:grid; place-items:center; text-align:center; gap: 16px; }
-
-    /* Preferencia de reducido movimiento */
-    @media (prefers-reduced-motion: reduce) {
-      * { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: 0ms !important; }
-    }
-  </style>
+        @media (max-width: 600px) {
+            .char-zone { width: 32%; }
+            .avatar { font-size: 3.5rem; }
+            .bubble { font-size: 0.7rem; top: 60px; min-width: auto; }
+            .seed { width: 45px; height: 45px; font-size: 1.4rem; }
+            .seed-bar { height: 95px; }
+        }
+    </style>
 </head>
 <body>
-  <div id="app" class="high-contrast daltonic">
-    <div class="topbar">
-      <button class="icon-btn" id="btnSettings" aria-label="Accesibilidad y ajustes" title="Accesibilidad y ajustes">⚙️</button>
+
+    <!-- MUNDO -->
+    <div id="game-world">
+        <div id="level-indicator">Nivel 1</div>
+        <div class="sky gray-filter" id="bg-sky">
+            <div class="cloud c1"></div>
+        </div>
+        <div class="ground gray-filter" id="bg-ground"></div>
+        
+        <!-- Contenedor dinámico de personajes -->
+        <div class="characters-container" id="chars-wrapper"></div>
     </div>
-    <div class="settings" id="settingsPanel" role="dialog" aria-label="Panel de accesibilidad">
-      <h4>Accesibilidad</h4>
-      <div class="row">
-        <span>Alto contraste</span>
-        <label class="chip"><input type="checkbox" id="toggleContrast" checked><span>Activado</span></label>
-      </div>
-      <div class="row">
-        <span>Modo daltonismo</span>
-        <label class="chip"><input type="checkbox" id="toggleDaltonic" checked><span>Activado</span></label>
-      </div>
-      <div class="row">
-        <span>Subtítulos</span>
-        <label class="chip"><input type="checkbox" id="toggleSubs" checked><span>Activado</span></label>
-      </div>
-      <div class="row">
-        <span>Voz en off</span>
-        <label class="chip"><input type="checkbox" id="toggleVoice" checked><span>Activado</span></label>
-      </div>
-      <div class="row">
-        <span>Música</span>
-        <label class="chip"><input type="checkbox" id="toggleMusic" checked><span>Activado</span></label>
-      </div>
+
+    <!-- UI DE SEMILLAS -->
+    <div class="seed-bar" id="seed-bar-wrapper"></div>
+
+    <!-- MENSAJES -->
+    <div id="message-toast"></div>
+
+    <!-- MODAL DE VICTORIA/NIVEL -->
+    <div id="modal-overlay">
+        <div class="modal-content">
+            <h2 id="modal-title">¡Excelente!</h2>
+            <p id="modal-msg">Nivel completado.</p>
+            <button class="btn-action" id="modal-btn" onclick="nextLevel()">Siguiente Nivel ➡️</button>
+        </div>
     </div>
-    <div id="screen" class="screen"></div>
-    <div id="modalHow" class="modal-backdrop" aria-hidden="true">
-      <div class="modal" role="dialog" aria-label="Cómo se juega">
-        <h3>Cómo se juega</h3>
-        <div class="steps">
-          <div class="step-card">
-            <div class="illus">
-              <!-- Ilustración 1: manos arrastrando semilla -->
-              <svg width="140" height="120" viewBox="0 0 140 120" aria-hidden="true">
-                <rect x="6" y="84" width="128" height="28" rx="14" fill="#1b3647" stroke="#3a5568"/>
-                <circle cx="40" cy="98" r="14" fill="#10212a" stroke="#3a5568"/>
-                <text x="34" y="104" font-size="18">💪</text>
-                <rect x="80" y="32" width="42" height="42" rx="8" fill="#20384a" stroke="#3a5568"/>
-                <path d="M45,95 C70,80 90,60 100,52" stroke="#00c2ff" stroke-width="4" fill="none"/>
-              </svg>
-            </div>
-            <div>Arrastra una semilla.</div>
-          </div>
-          <div class="step-card">
-            <div class="illus">
-              <!-- Ilustración 2: jardín floreciendo -->
-              <svg width="140" height="120" viewBox="0 0 140 120" aria-hidden="true">
-                <defs>
-                  <linearGradient id="g" x1="0" x2="0" y1="0" y2="1">
-                    <stop offset="0%" stop-color="#51e2f5"/>
-                    <stop offset="100%" stop-color="#14b8a6"/>
-                  </linearGradient>
-                </defs>
-                <rect x="0" y="0" width="140" height="120" rx="14" fill="url(#g)"/>
-                <g>
-                  <circle cx="40" cy="84" r="10" fill="#ffd000"/>
-                  <circle cx="40" cy="84" r="5" fill="#7dff7a"/>
-                  <circle cx="88" cy="84" r="10" fill="#ffd000"/>
-                  <circle cx="88" cy="84" r="5" fill="#7dff7a"/>
-                </g>
-              </svg>
-            </div>
-            <div>Haz florecer el jardín.</div>
-          </div>
-          <div class="step-card">
-            <div class="illus">
-              <!-- Ilustración 3: barra de alegría 100 -->
-              <svg width="140" height="120" viewBox="0 0 140 120" aria-hidden="true">
-                <rect x="10" y="44" width="120" height="24" rx="12" fill="#20384a" stroke="#3a5568"/>
-                <rect x="10" y="44" width="100" height="24" rx="12" fill="#7dff7a"/>
-                <text x="116" y="64" font-size="14" fill="#001217">100</text>
-              </svg>
-            </div>
-            <div>Llena la alegría.</div>
-          </div>
-        </div>
-        <div style="margin-top:12px; display:flex; justify-content:flex-end; gap:8px">
-          <button class="btn ghost" id="closeHow">Cerrar</button>
-        </div>
-      </div>
-    </div>
-    <div id="subtitles" class="subtitles" style="display:none">Subtítulos</div>
-  </div>
 
-  <script>
-  // =====================================================
-  // CONFIG — Frases, tiempos, colores editables por docentes
-  // =====================================================
-  const CONFIG = {
-    // VOZ (subtítulos iguales y breves, máx. 6–7 palabras)
-    VO_LINES: {
-      hello: "¡Hola, Sembrador! Jardín sin color.",
-      seedsAreWords: "Tus palabras son semillas.",
-      choosePositive: "Elige mensajes positivos.",
-      success: "¡Publicación perfecta! ¡Sembraste alegría!",
-      softFail: "Intenta escuchar mejor su corazón.",
-      victory: "¡Jardinero Maestro de la Empatía!",
-    },
-    // Microfrases tooltips en barra
-    SEED_TIPS: {
-      animo: "Ánimo: ‘¡Tú puedes!’",
-      felicitacion: "Felicita: ‘¡Gran trabajo!’",
-      interes: "Interés: ‘¿Cómo te sientes?’",
-      gracias: "Gracias: ‘¡Gracias por eso!’",
-    },
-    // Frases emergentes correctas por escenario
-    SCENES_TEXT: {
-      leo: "¡Tú puedes, Leo!",
-      ana: "¡Me encanta tu dibujo!",
-      marco: "Hola, Marco. ¿Todo bien?",
-    },
-    // Puntos (suman 100)
-    JOY_STEPS: [34, 33, 33],
-    // Duraciones tutorial (ms)
-    TUTORIAL: {
-      stepDelay: 1400,
-    },
-  };
+    <script>
+        /* --- CONFIGURACIÓN DE NIVELES (DATA) --- */
+        const LEVELS_DATA = [
+            {
+                id: 1,
+                name: "El Jardín Inicial",
+                cssClass: "level-1",
+                characters: [
+                    {
+                        id: 'leo', needs: 'encourage', 
+                        startEmoji: '😟', endEmoji: '😄', 
+                        bubbleStart: 'Examen mañana... 📚', bubbleEnd: '¡Sí puedo!', 
+                        decor: '🌻', msgCorrect: '¡Tú puedes, Leo!', msgError: 'Leo necesita confianza.'
+                    },
+                    {
+                        id: 'ana', needs: 'congrats', 
+                        startEmoji: '🎨', endEmoji: '😍', 
+                        bubbleStart: '¡Mi dibujo nuevo!', bubbleEnd: '¡Gracias!', 
+                        decor: '🦋', msgCorrect: '¡Qué talento, Ana!', msgError: 'Ana quiere celebrar.'
+                    },
+                    {
+                        id: 'marco', needs: 'interest', 
+                        startEmoji: '😐', endEmoji: '🙂', 
+                        bubbleStart: '...', bubbleEnd: 'Estoy bien', 
+                        decor: '🌱', msgCorrect: '¡Interés genuino!', msgError: 'Marco se siente solo.'
+                    }
+                ],
+                // Pool de semillas para este nivel (Correctas + 1 Distractor aleatorio)
+                seeds: [
+                    { type: 'encourage', label: 'Ánimo', icon: '💪', color: 'orange' },
+                    { type: 'congrats', label: 'Felicitar', icon: '🎉', color: 'yellow' },
+                    { type: 'interest', label: 'Interés', icon: '🤔', color: 'green' }
+                ]
+            },
+            {
+                id: 2,
+                name: "Parque Lluvioso",
+                cssClass: "level-2", // CSS cambiará fondo a gris/lluvioso
+                characters: [
+                    {
+                        id: 'sofia', needs: 'comfort', 
+                        startEmoji: '😢', endEmoji: '🤗', 
+                        bubbleStart: 'Se rompió mi juguete...', bubbleEnd: 'Ya pasó...', 
+                        decor: '❤️', msgCorrect: '¡Un abrazo ayuda!', msgError: 'Sofia está triste, necesita cariño.'
+                    },
+                    {
+                        id: 'beto', needs: 'calm', 
+                        startEmoji: '😠', endEmoji: '😌', 
+                        bubbleStart: '¡No es justo!', bubbleEnd: 'Respira...', 
+                        decor: '✨', msgCorrect: '¡Calma recuperada!', msgError: 'Beto está enfadado, ayúdalo a calmarse.'
+                    },
+                    {
+                        id: 'lucia', needs: 'help', 
+                        startEmoji: '😵‍💫', endEmoji: '🤓', 
+                        bubbleStart: 'No entiendo esto...', bubbleEnd: '¡Ah, ya veo!', 
+                        decor: '💡', msgCorrect: '¡Gracias por la ayuda!', msgError: 'Lucia está confundida.'
+                    }
+                ],
+                seeds: [
+                    { type: 'comfort', label: 'Consuelo', icon: '🧸', color: 'pink' },
+                    { type: 'calm', label: 'Calma', icon: '🍃', color: 'teal' },
+                    { type: 'help', label: 'Ayudar', icon: '🤝', color: 'purple' }
+                ]
+            },
+            {
+                id: 3,
+                name: "Escuela de Empatía",
+                cssClass: "level-3",
+                characters: [
+                    {
+                        id: 'dani', needs: 'care', 
+                        startEmoji: '🤒', endEmoji: '😊', 
+                        bubbleStart: 'Me siento mal...', bubbleEnd: 'Mejorando', 
+                        decor: '🍵', msgCorrect: '¡Cuidaste a Dani!', msgError: 'Dani está enfermo.'
+                    },
+                    {
+                        id: 'eva', needs: 'protect', 
+                        startEmoji: '😨', endEmoji: '😌', 
+                        bubbleStart: '¡Qué oscuridad!', bubbleEnd: 'Estoy a salvo', 
+                        decor: '🛡️', msgCorrect: '¡Seguridad brindada!', msgError: 'Eva tiene miedo.'
+                    },
+                    {
+                        id: 'tom', needs: 'share', 
+                        startEmoji: '🤤', endEmoji: '😋', 
+                        bubbleStart: 'Tengo hambre...', bubbleEnd: '¡Qué rico!', 
+                        decor: '🍎', msgCorrect: '¡Compartir es cuidar!', msgError: 'Tom necesita compartir.'
+                    }
+                ],
+                seeds: [
+                    { type: 'care', label: 'Cuidar', icon: '💊', color: 'pink' },
+                    { type: 'protect', label: 'Proteger', icon: '🔦', color: 'blue' },
+                    { type: 'share', label: 'Compartir', icon: '🍪', color: 'orange' }
+                ]
+            }
+        ];
 
-  // =====================================================
-  // ESTADO GLOBAL
-  // =====================================================
-  const state = {
-    mode: 'inicio',
-    joy: 0,
-    usedSeeds: 0,
-    joyStepIndex: 0,
-    startedAt: 0,
-    accessibility: { voice: true, subs: true, contrast: true, daltonic: true, music: true },
-    selectedSeed: null,
-    successes: { animo:0, felicitacion:0, interes:0, gracias:0 },
-    friends: [], // se define al render de misión
-  };
+        const DISTRACTORS_POOL = [
+            { type: 'joke', label: 'Broma', icon: '🤡', color: 'red' },
+            { type: 'ignore', label: 'Ignorar', icon: '✋', color: 'blue' },
+            { type: 'rush', label: 'Prisa', icon: '🏃', color: 'green' }
+        ];
 
-  const appEl = document.getElementById('screen');
-  const subsEl = document.getElementById('subtitles');
-  const settingsPanel = document.getElementById('settingsPanel');
+        /* --- ESTADO GLOBAL --- */
+        let currentLevelIndex = 0;
+        let completedChars = 0;
+        let isLevelCompleted = false;
 
-  // =====================================================
-  // AUDIO (WebAudio) — música adaptativa + sfx
-  // =====================================================
-  let audioCtx = null, musicGain, sfxGain, musicOsc;
-  function ensureAudio() {
-    if (audioCtx) return;
-    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    musicGain = audioCtx.createGain(); musicGain.gain.value = 0.15; musicGain.connect(audioCtx.destination);
-    sfxGain = audioCtx.createGain(); sfxGain.gain.value = 0.25; sfxGain.connect(audioCtx.destination);
+        // Audio Context
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        let audioCtx;
 
-    // Música muy ligera: oscilador con filtro que cambia con alegría
-    musicOsc = audioCtx.createOscillator();
-    const filter = audioCtx.createBiquadFilter();
-    filter.type = 'lowpass'; filter.frequency.value = 600;
-    musicOsc.type = 'triangle'; musicOsc.frequency.value = 180; // base
-    musicOsc.connect(filter); filter.connect(musicGain);
-    musicOsc.start();
-  }
-  function updateMusicByJoy() {
-    if (!audioCtx) return;
-    const t = state.joy / 100;
-    musicGain.gain.value = state.accessibility.music ? (0.08 + t*0.18) : 0;
-  }
-  function sfxSuccess() {
-    if (!audioCtx || !state.accessibility.music) return;
-    const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
-    o.type = 'sine'; o.frequency.setValueAtTime(520, audioCtx.currentTime);
-    o.frequency.exponentialRampToValueAtTime(1040, audioCtx.currentTime + 0.22);
-    g.gain.value = 0.001; g.gain.exponentialRampToValueAtTime(0.35, audioCtx.currentTime + 0.02);
-    g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.4);
-    o.connect(g); g.connect(sfxGain); o.start(); o.stop(audioCtx.currentTime + 0.45);
-  }
-  function sfxFail() {
-    if (!audioCtx || !state.accessibility.music) return;
-    const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
-    o.type = 'sawtooth'; o.frequency.setValueAtTime(280, audioCtx.currentTime);
-    o.frequency.exponentialRampToValueAtTime(180, audioCtx.currentTime + 0.25);
-    g.gain.value = 0.0001; g.gain.exponentialRampToValueAtTime(0.25, audioCtx.currentTime + 0.02);
-    g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.35);
-    o.connect(g); g.connect(sfxGain); o.start(); o.stop(audioCtx.currentTime + 0.36);
-  }
+        /* --- INICIALIZACIÓN --- */
+        window.onload = () => {
+            loadLevel(0);
+        };
 
-  // =====================================================
-  // VOZ + SUBTÍTULOS (SpeechSynthesis API)
-  // =====================================================
-  function playVoice(text) {
-    // Texto breve (<=7 palabras por lineamiento)
-    if (!state.accessibility.voice) {
-      if (state.accessibility.subs) showSubs(text);
-      return;
-    }
-    try { ensureAudio(); } catch(e){}
-    const utter = new SpeechSynthesisUtterance(text);
-    const voices = window.speechSynthesis.getVoices();
-    // Preferir español MX o ES
-    const voice = voices.find(v => /es-MX|es-ES/.test(v.lang)) || voices.find(v => v.lang.startsWith('es')) || voices[0];
-    if (voice) utter.voice = voice;
-    utter.rate = 0.95; utter.pitch = 1.0; utter.volume = 1.0;
-    if (state.accessibility.subs) showSubs(text);
-    window.speechSynthesis.cancel();
-    window.speechSynthesis.speak(utter);
-  }
-  function showSubs(text) {
-    subsEl.textContent = text;
-    subsEl.style.display = 'block';
-    clearTimeout(showSubs._t);
-    showSubs._t = setTimeout(()=>{ subsEl.style.display = 'none'; }, 2600);
-  }
+        /* --- FUNCIONES DE LÓGICA DEL JUEGO --- */
 
-  // =====================================================
-  // RENDERING SCREENS
-  // =====================================================
-  function render() {
-    appEl.innerHTML = '';
-    document.body.classList.toggle('high-contrast', state.accessibility.contrast);
-    document.body.classList.toggle('daltonic', state.accessibility.daltonic);
-    if (state.mode === 'inicio') return renderHome();
-    if (state.mode === 'tutorial') return renderTutorial();
-    if (state.mode === 'mision') return renderMission();
-    if (state.mode === 'victoria') return renderVictory();
-  }
+        function loadLevel(index) {
+            currentLevelIndex = index;
+            const levelData = LEVELS_DATA[index];
+            
+            // 1. Resetear Estado
+            completedChars = 0;
+            isLevelCompleted = false;
+            document.getElementById('level-indicator').innerText = `Nivel ${index + 1}: ${levelData.name}`;
+            
+            // 2. Configurar Fondo (Clases CSS)
+            const world = document.getElementById('game-world');
+            world.className = ''; // Limpiar clases anteriores
+            world.classList.add(levelData.cssClass);
+            
+            // Restaurar filtros grises
+            document.getElementById('bg-sky').classList.add('gray-filter');
+            document.getElementById('bg-ground').classList.add('gray-filter');
 
-  function renderHome() {
-    const wrap = document.createElement('div');
-    wrap.className = 'card start-grid';
-    wrap.innerHTML = `
-      <div>
-        <div class="title">El Jardín de la Amistad</div>
-        <div class="subtitle">Sembradores de Alegría</div>
-        <div class="hero-garden" aria-hidden="true"></div>
-      </div>
-      <div>
-        <div style="display:flex; flex-direction:column; gap:10px">
-          <button class="btn" id="btnPlay">Jugar</button>
-          <button class="btn ghost" id="btnHow">Cómo se juega</button>
-        </div>
-        <div style="height:10px"></div>
-        <div class="chip-toggle" aria-label="Toggles inicio">
-          ${renderChip('Música', 'music', state.accessibility.music)}
-          ${renderChip('Voz en off', 'voice', state.accessibility.voice)}
-          ${renderChip('Subtítulos', 'subs', state.accessibility.subs)}
-        </div>
-        <div style="margin-top:10px; color:var(--text-dim); font-size:13px">Texto mínimo. Usa íconos y voz.</div>
-      </div>
-    `;
-    appEl.appendChild(wrap);
+            // 3. Renderizar Personajes
+            const charsContainer = document.getElementById('chars-wrapper');
+            charsContainer.innerHTML = ''; // Limpiar anterior
 
-    // sembrar florecitas de portada
-    const hero = wrap.querySelector('.hero-garden');
-    for (let i=0;i<14;i++) {
-      const f = document.createElement('div'); f.className='flower pattern';
-      f.style.setProperty('--x', `${Math.random()*92+4}%`);
-      f.style.setProperty('--y', `${Math.random()*20+10}%`);
-      hero.appendChild(f);
-    }
+            levelData.characters.forEach((char, i) => {
+                const charHtml = `
+                    <div class="char-zone gray-filter" id="zone-${i}" data-index="${i}" data-needs="${char.needs}">
+                        <div class="bubble" id="bubble-${i}">${char.bubbleStart}</div>
+                        <!-- Decoraciones posicionadas relativamente aleatorias para variar -->
+                        <div class="decor" style="bottom: 10px; left: 10px;">${char.decor}</div>
+                        <div class="decor" style="bottom: 50px; right: 10px;">${char.decor}</div>
+                        <div class="decor" style="top: 100px; left: 20px;">${char.decor}</div>
+                        <div class="avatar" id="avatar-${i}">${char.startEmoji}</div>
+                    </div>
+                `;
+                charsContainer.insertAdjacentHTML('beforeend', charHtml);
+            });
 
-    wrap.querySelector('#btnPlay').addEventListener('click', ()=>{ state.mode='tutorial'; render(); });
-    wrap.querySelector('#btnHow').addEventListener('click', openHow);
+            // 4. Preparar y Mezclar Semillas
+            const seedsContainer = document.getElementById('seed-bar-wrapper');
+            seedsContainer.innerHTML = '';
+            
+            // Copiar las semillas correctas
+            let levelSeeds = [...levelData.seeds];
+            
+            // Añadir 1 distractor aleatorio
+            const randomDistractor = DISTRACTORS_POOL[Math.floor(Math.random() * DISTRACTORS_POOL.length)];
+            levelSeeds.push(randomDistractor);
 
-    // toggles
-    wrap.querySelectorAll('.chip input').forEach(inp=>{
-      inp.addEventListener('change', (e)=>{
-        const k = e.target.dataset.key;
-        state.accessibility[k] = e.target.checked;
-        if (k==='music') { ensureAudio(); updateMusicByJoy(); if(!state.accessibility.music) musicGain.gain.value = 0; }
-        if (k==='voice' && !e.target.checked) window.speechSynthesis.cancel();
-      });
-    });
-  }
-  function renderChip(label, key, val) {
-    return `<label class="chip ${val?'active':''}"><input type="checkbox" data-key="${key}" ${val?'checked':''}><span>${label}</span></label>`;
-  }
+            // MEZCLAR (Fisher-Yates Shuffle) para que las posiciones sean aleatorias
+            for (let i = levelSeeds.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [levelSeeds[i], levelSeeds[j]] = [levelSeeds[j], levelSeeds[i]];
+            }
 
-  function openHow() {
-    document.getElementById('modalHow').style.display = 'flex';
-    document.getElementById('closeHow').onclick = ()=>{
-      document.getElementById('modalHow').style.display = 'none';
-    };
-  }
-
-  function renderTutorial() {
-    const wrap = document.createElement('div');
-    wrap.className = 'garden';
-    wrap.innerHTML = `
-      <div class="soil"></div>
-      <div class="guardian pattern" aria-label="Guardiana del Jardín"></div>
-      <div class="bubble" id="bubble">…</div>
-      <div class="seedbar" aria-label="Barra de semillas demo">
-        <div class="seed" aria-label="Semilla Burla (ejemplo)" title="Ejemplo negativo">⚠️</div>
-        <div class="seed" aria-label="Semilla de Ánimo" title="Ánimo">💪</div>
-      </div>
-      <div style="position:absolute; right:18px; bottom:18px; display:flex; gap:8px">
-        <button class="btn" id="btnOk" style="display:none">¡Entendido!</button>
-      </div>
-    `;
-    appEl.appendChild(wrap);
-
-    ensureAudio(); updateMusicByJoy();
-
-    // Secuencia breve automática
-    const bubble = wrap.querySelector('#bubble');
-    const speak = (t)=>{ bubble.textContent = t; playVoice(t); };
-
-    const sequence = async () => {
-      speak(CONFIG.VO_LINES.hello);
-      await delay(CONFIG.TUTORIAL.stepDelay);
-      speak(CONFIG.VO_LINES.seedsAreWords);
-      await delay(CONFIG.TUTORIAL.stepDelay);
-
-      // Mostrar efecto negativo (burla como ícono, sin texto)
-      seedDropEffect(wrap, '⚠️', {x: window.innerWidth*0.48, y: window.innerHeight*0.6});
-      spawnThorns(wrap, window.innerWidth*0.48, window.innerHeight*0.70);
-      sfxFail();
-      await delay(CONFIG.TUTORIAL.stepDelay);
-
-      // Positivo: Ánimo → florecer + sonrisa
-      seedDropEffect(wrap, '💪', {x: window.innerWidth*0.42, y: window.innerHeight*0.65});
-      spawnFlowers(wrap, window.innerWidth*0.42, window.innerHeight*0.72, 10);
-      spawnButterflies(wrap);
-      sfxSuccess();
-      await delay(900);
-
-      speak(CONFIG.VO_LINES.choosePositive);
-      await delay(900);
-
-      wrap.querySelector('#btnOk').style.display = 'inline-flex';
-      wrap.querySelector('#btnOk').focus();
-    };
-    sequence();
-
-    wrap.querySelector('#btnOk').addEventListener('click', ()=>{ state.mode='mision'; render(); });
-  }
-
-  function renderMission() {
-    state.joy = 0; state.joyStepIndex = 0; state.usedSeeds = 0; state.selectedSeed = null;
-    state.successes = { animo:0, felicitacion:0, interes:0, gracias:0 };
-    state.friends = [
-      { id:'leo', need:'animo', label:'Leo 😟', emoji:'😟', solved:false, x: 16, y: 28, mood:'sad' },
-      { id:'ana', need:'felicitacion', label:'Ana 🎨', emoji:'🎨', solved:false, x: 42, y: 24, mood:'smile' },
-      { id:'marco', need:'interes', label:'Marco …', emoji:'…', solved:false, x: 70, y: 30, mood:'neutral' },
-    ];
-    state.startedAt = performance.now();
-
-    const wrap = document.createElement('div');
-    wrap.className = 'garden';
-    wrap.setAttribute('aria-label','Jardín');
-
-    // HUD
-    const hud = document.createElement('div'); hud.className='hud';
-    hud.innerHTML = `
-      <div class="counter" aria-live="polite">Semillas: <b id="cSeeds">0</b></div>
-      <div class="joy-wrap" aria-label="Barra de Alegría"><div id="joyBar" class="joy-bar"></div></div>
-      <button class="btn ghost" id="btnRetry" title="Reintentar">Reintentar</button>
-      <button class="btn disabled" id="btnNext" title="Siguiente jardín (pronto)" disabled>Siguiente jardín</button>
-    `;
-    wrap.appendChild(hud);
-
-    // Seed bar
-    const seedbar = document.createElement('div'); seedbar.className='seedbar'; seedbar.setAttribute('role','toolbar');
-    const seeds = [
-      {id:'animo', ico:'💪', label:'Ánimo', tip: CONFIG.SEED_TIPS.animo},
-      {id:'felicitacion', ico:'🎉', label:'Felicitación', tip: CONFIG.SEED_TIPS.felicitacion},
-      {id:'interes', ico:'🤔', label:'Interés Genuino', tip: CONFIG.SEED_TIPS.interes},
-      {id:'gracias', ico:'🙏', label:'Agradecimiento', tip: CONFIG.SEED_TIPS.gracias},
-    ];
-    seeds.forEach((s, i)=>{
-      const el = document.createElement('button');
-      el.className = 'seed'; el.dataset.id = s.id; el.dataset.idx = i+1; el.setAttribute('aria-label', `${s.label}`);
-      el.setAttribute('data-tooltip', s.tip);
-      el.innerHTML = `<div style="font-size:36px">${s.ico}</div>`;
-      el.addEventListener('pointerdown', (e)=> startDrag(e, s.id, el));
-      el.addEventListener('click', ()=> selectSeed(s.id, el));
-      seedbar.appendChild(el);
-    });
-    wrap.appendChild(seedbar);
-
-    // Friends
-    state.friends.forEach(f => {
-      const el = document.createElement('button'); el.className='friend'; el.id = `f_${f.id}`; el.style.left = f.x+'%'; el.style.top = f.y+'%';
-      el.setAttribute('tabindex','0'); el.setAttribute('aria-label', f.label);
-      el.innerHTML = `
-        <div class="label">${f.label}</div>
-        <div class="state">${f.emoji}</div>
-        <div class="avatar pattern">
-          <div class="eyes"><div class="eye"></div><div class="eye"></div></div>
-          <div class="mouth ${f.mood==='sad'?'sad':''}"></div>
-        </div>
-      `;
-      el.addEventListener('click', ()=> tryDropOnFriend(f.id));
-      wrap.appendChild(el);
-    });
-
-    // Subtitle hint (primera vez)
-    playVoice('Arrastra y suelta la semilla.');
-
-    // Eventos HUD
-    wrap.querySelector('#btnRetry').addEventListener('click', ()=> renderMission());
-
-    appEl.appendChild(wrap);
-
-    // Keyboard accessibility
-    window.onkeydown = (e)=>{
-      if (e.key>='1' && e.key<='4') {
-        const idx = Number(e.key)-1; const el = seedbar.children[idx];
-        if (el) selectSeed(el.dataset.id, el);
-      } else if (e.key==='Enter') {
-        // soltar sobre amigo enfocado
-        const focus = document.activeElement; if (focus && focus.classList.contains('friend')) {
-          const id = focus.id.replace('f_','');
-          tryDropOnFriend(id);
+            // Renderizar Semillas
+            levelSeeds.forEach(seed => {
+                const seedEl = document.createElement('div');
+                seedEl.className = 'seed-container';
+                seedEl.innerHTML = `
+                    <div class="seed" data-type="${seed.type}" data-color="${seed.color}">
+                        ${seed.icon}
+                    </div>
+                    <div class="seed-label">${seed.label}</div>
+                `;
+                seedsContainer.appendChild(seedEl);
+                
+                // Añadir listeners al elemento .seed recién creado
+                const draggable = seedEl.querySelector('.seed');
+                addDragListeners(draggable);
+            });
         }
-      }
-    };
 
-    ensureAudio(); updateMusicByJoy();
-  }
+        /* --- DRAG & DROP SYSTEM --- */
+        let draggedItem = null;
+        let clone = null;
 
-  // =====================================================
-  // DRAG & DROP accesible (mouse/touch/teclado)
-  // =====================================================
-  let drag = { active:false, seed:null, ghost:null };
-  function selectSeed(id, el) {
-    state.selectedSeed = id;
-    document.querySelectorAll('.seed').forEach(s => s.classList.toggle('selected', s === el));
-    playVoice(labelForSeed(id));
-  }
-  function startDrag(e, id, originEl) {
-    e.preventDefault();
-    selectSeed(id, originEl);
-    drag.active = true; drag.seed = id;
-    drag.ghost = originEl.cloneNode(true); drag.ghost.classList.add('ghost');
-    document.body.appendChild(drag.ghost);
-    moveGhost(e.clientX, e.clientY);
-    window.addEventListener('pointermove', onMove);
-    window.addEventListener('pointerup', onUp);
-  }
-  function onMove(e){ if (!drag.active) return; moveGhost(e.clientX, e.clientY); }
-  function onUp(e){
-    if (!drag.active) return; drag.active=false;
-    if (drag.ghost) drag.ghost.remove();
-    window.removeEventListener('pointermove', onMove);
-    window.removeEventListener('pointerup', onUp);
+        function addDragListeners(el) {
+            el.addEventListener('mousedown', startDrag);
+            el.addEventListener('touchstart', startDrag, {passive: false});
+        }
 
-    const el = document.elementFromPoint(e.clientX, e.clientY);
-    if (!el) return;
-    const friendEl = el.closest('.friend');
-    if (friendEl) {
-      const id = friendEl.id.replace('f_','');
-      tryDropOnFriend(id);
-    }
-  }
-  function moveGhost(x,y){ if (drag.ghost){ drag.ghost.style.left = x+'px'; drag.ghost.style.top = y+'px'; } }
+        function startDrag(e) {
+            e.preventDefault(); 
+            initAudio();
 
-  function tryDropOnFriend(friendId) {
-    const friend = state.friends.find(f=>f.id===friendId);
-    if (!friend || friend.solved || !state.selectedSeed) return;
-    state.usedSeeds++; updateCounter();
-    // evaluación
-    if (state.selectedSeed === friend.need) {
-      // éxito
-      friend.solved = true; successOnFriend(friend);
-      const inc = CONFIG.JOY_STEPS[state.joyStepIndex] || 0; state.joy += inc; state.joy = Math.min(100, state.joy);
-      state.joyStepIndex++;
-      updateJoy();
-      sfxSuccess();
-      playVoice(CONFIG.VO_LINES.success);
-      if (state.selectedSeed==='animo') state.successes.animo++;
-      if (state.selectedSeed==='felicitacion') state.successes.felicitacion++;
-      if (state.selectedSeed==='interes') state.successes.interes++;
-      if (state.selectedSeed==='gracias') state.successes.gracias++;
+            let clientX, clientY;
+            if (e.type === 'touchstart') {
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+            } else {
+                clientX = e.clientX;
+                clientY = e.clientY;
+            }
 
-      if (state.friends.every(f=>f.solved)) {
-        setTimeout(()=>{ state.mode='victoria'; render(); }, 900);
-      }
-    } else {
-      // error suave
-      spawnNoGermina(document.body, friendElById(friendId));
-      sfxFail();
-      playVoice(CONFIG.VO_LINES.softFail);
-    }
-  }
+            draggedItem = e.target.closest('.seed'); // Asegurar seleccionar el div .seed
+            if(!draggedItem) return;
 
-  function friendElById(id){ return document.getElementById('f_'+id); }
+            // Crear Clon Visual
+            clone = draggedItem.cloneNode(true);
+            clone.classList.add('dragging-clone');
+            // Copiar estilos computados clave si es necesario, o confiar en CSS
+            clone.style.background = getComputedStyle(draggedItem).background;
+            clone.style.borderColor = getComputedStyle(draggedItem).borderColor;
+            
+            document.body.appendChild(clone);
+            moveClone(clientX, clientY);
 
-  function labelForSeed(id){
-    return id==='animo' ? 'Ánimo' : id==='felicitacion' ? 'Felicitación' : id==='interes' ? 'Interés' : 'Agradecimiento';
-  }
+            document.addEventListener('mousemove', onMove);
+            document.addEventListener('mouseup', onEnd);
+            document.addEventListener('touchmove', onMove, {passive: false});
+            document.addEventListener('touchend', onEnd);
+        }
 
-  function updateCounter(){ const el = document.getElementById('cSeeds'); if (el) el.textContent = String(state.usedSeeds); }
-  function updateJoy(){
-    const bar = document.getElementById('joyBar'); if (bar) bar.style.width = state.joy+'%';
-    updateMusicByJoy();
-  }
+        function onMove(e) {
+            e.preventDefault();
+            let x, y;
+            if (e.type === 'touchmove') {
+                x = e.touches[0].clientX;
+                y = e.touches[0].clientY;
+            } else {
+                x = e.clientX;
+                y = e.clientY;
+            }
+            moveClone(x, y);
+        }
 
-  // Éxito visual por amigo
-  function successOnFriend(friend) {
-    const el = friendElById(friend.id);
-    if (!el) return;
-    // carita feliz
-    const mouth = el.querySelector('.mouth'); mouth.classList.remove('sad');
-    // efecto texto breve
-    showFloatingText(el, friend.id);
-    // magia y flores
-    const rect = el.getBoundingClientRect();
-    spawnParticles(el, rect.width/2, rect.height/2);
-    spawnFlowers(document.querySelector('.garden'), rect.left + rect.width/2, rect.bottom - 10, 12);
-    spawnButterflies(document.querySelector('.garden'));
-  }
+        function moveClone(x, y) {
+            if (clone) {
+                clone.style.left = (x - 35) + 'px';
+                clone.style.top = (y - 35) + 'px';
+            }
+        }
 
-  function showFloatingText(parent, friendId) {
-    const txt = document.createElement('div');
-    txt.style.position='absolute'; txt.style.left='50%'; txt.style.top='-24px'; txt.style.transform='translateX(-50%)';
-    txt.style.background='var(--subtitle-bg)'; txt.style.border='2px solid var(--panel-2)'; txt.style.borderRadius='12px'; txt.style.padding='6px 10px'; txt.style.fontWeight='800';
-    txt.textContent = CONFIG.SCENES_TEXT[friendId] || '¡Bien!'; parent.appendChild(txt);
-    setTimeout(()=> txt.remove(), 1800);
-  }
+        function onEnd(e) {
+            let x, y;
+            if (e.type === 'touchend') {
+                x = e.changedTouches[0].clientX;
+                y = e.changedTouches[0].clientY;
+            } else {
+                x = e.clientX;
+                y = e.clientY;
+            }
 
-  // Error: semilla no germina
-  function spawnNoGermina(root, targetEl) {
-    const rect = targetEl.getBoundingClientRect();
-    // pequeña nube que se desvanece
-    for (let i=0;i<10;i++) {
-      const p = document.createElement('div'); p.className='particle';
-      p.style.left = (rect.left + rect.width/2) + 'px';
-      p.style.top = (rect.top + rect.height/2) + 'px';
-      p.style.background = '#9fb3bd';
-      p.style.setProperty('--dx', (Math.random()*60-30)+'px');
-      p.style.setProperty('--dy', (Math.random()*-40-10)+'px');
-      document.body.appendChild(p);
-      setTimeout(()=> p.remove(), 900);
-    }
-  }
+            clone.style.display = 'none';
+            let elemBelow = document.elementFromPoint(x, y);
+            clone.remove();
+            clone = null;
 
-  // Utilidades de FX
-  function spawnParticles(parent, x, y) {
-    for (let i=0;i<18;i++) {
-      const p = document.createElement('div'); p.className='particle';
-      p.style.left = x + 'px'; p.style.top = y + 'px';
-      p.style.background = i%2? '#fff' : '#fffd8a';
-      p.style.setProperty('--dx', (Math.random()*140-70)+'px');
-      p.style.setProperty('--dy', (Math.random()*-120-20)+'px');
-      parent.appendChild(p); setTimeout(()=> p.remove(), 900);
-    }
-  }
-  function spawnFlowers(root, x, y, n=8) {
-    for (let i=0;i<n;i++) {
-      const f = document.createElement('div'); f.className='flower pattern';
-      f.style.position='fixed'; f.style.left = (x + Math.random()*80-40) + 'px'; f.style.top = (y + Math.random()*20-10) + 'px';
-      f.style.transform='scale(0)'; f.style.animation='grow .8s ease forwards';
-      document.body.appendChild(f); setTimeout(()=> f.remove(), 1000);
-    }
-  }
-  function spawnButterflies(root) {
-    for (let i=0;i<3;i++) {
-      const b = document.createElement('div'); b.className='butterfly';
-      b.style.left = (Math.random()*80+10) + '%'; b.style.top = (Math.random()*40+10) + '%';
-      root.appendChild(b); setTimeout(()=> b.remove(), 6000);
-    }
-  }
-  function spawnThorns(root, x, y) {
-    for (let i=0;i<10;i++) {
-      const t = document.createElement('div'); t.className='thorn';
-      t.style.left = (x + Math.random()*80-40) + 'px'; t.style.top = (y + Math.random()*30-10) + 'px';
-      root.appendChild(t); setTimeout(()=> t.remove(), 1500);
-    }
-  }
-  function seedDropEffect(root, emoji, point) {
-    const e = document.createElement('div'); e.style.position='fixed'; e.style.left=point.x+'px'; e.style.top=point.y+'px'; e.style.fontSize='36px'; e.textContent=emoji; e.style.transform='translate(-50%,-50%) scale(0)'; e.style.transition='transform .35s ease';
-    document.body.appendChild(e); requestAnimationFrame(()=>{ e.style.transform='translate(-50%,-50%) scale(1)'; }); setTimeout(()=> e.remove(), 600);
-  }
-  function delay(ms){ return new Promise(r=>setTimeout(r, ms)); }
+            let dropZone = elemBelow ? elemBelow.closest('.char-zone') : null;
 
-  // =====================================================
-  // VICTORIA
-  // =====================================================
-  function renderVictory() {
-    const wrap = document.createElement('div'); wrap.className='garden vibrant';
-    wrap.innerHTML = `<div class="soil"></div>`;
+            if (dropZone && draggedItem) {
+                const seedType = draggedItem.dataset.type;
+                const charIndex = parseInt(dropZone.dataset.index);
+                checkInteraction(seedType, charIndex);
+            }
 
-    const pane = document.createElement('div'); pane.className='victory';
-    const timeMs = Math.max(0, performance.now() - state.startedAt);
-    const seconds = Math.round(timeMs/1000);
+            draggedItem = null;
+            document.removeEventListener('mousemove', onMove);
+            document.removeEventListener('mouseup', onEnd);
+            document.removeEventListener('touchmove', onMove);
+            document.removeEventListener('touchend', onEnd);
+        }
 
-    const summaryLine = `Animaste a 1, felicitaste a 1, e incluíste a 1. 100 puntos de alegría.`;
+        /* --- VERIFICACIÓN Y LÓGICA DE JUEGO --- */
+        function checkInteraction(seedType, charIndex) {
+            const currentLevel = LEVELS_DATA[currentLevelIndex];
+            const charData = currentLevel.characters[charIndex];
+            const zone = document.getElementById(`zone-${charIndex}`);
 
-    pane.innerHTML = `
-      <div class="card" style="text-align:center">
-        <div class="title">${CONFIG.VO_LINES.victory}</div>
-        <div class="subtitle">${summaryLine}</div>
-        <div style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap; margin-top:10px">
-          <div class="counter">Semillas usadas: <b>${state.usedSeeds}</b></div>
-          <div class="counter">Tiempo: <b>${seconds}s</b></div>
-          <div class="counter">Aciertos: Ánimo <b>${state.successes.animo}</b> • Felicitación <b>${state.successes.felicitacion}</b> • Interés <b>${state.successes.interes}</b></div>
-        </div>
-        <div style="margin-top:14px; display:flex; gap:10px; justify-content:center">
-          <button class="btn" id="btnReplay">Jugar de nuevo</button>
-          <button class="btn disabled" disabled>Próximos jardines</button>
-        </div>
-      </div>
-    `;
-    wrap.appendChild(pane);
-    appEl.appendChild(wrap);
+            // Si ya está resuelto, ignorar
+            if (!zone.classList.contains('gray-filter')) return;
 
-    playVoice(CONFIG.VO_LINES.victory);
+            if (seedType === charData.needs) {
+                // CORRECTO
+                handleSuccess(charIndex, charData);
+            } else {
+                // INCORRECTO
+                playErrorSound();
+                showMessage(charData.msgError, false);
+            }
+        }
 
-    document.getElementById('btnReplay').addEventListener('click', ()=>{ state.mode='mision'; render(); });
-  }
+        function handleSuccess(index, data) {
+            playMagicSound();
+            
+            // Actualizar Visuales
+            const zone = document.getElementById(`zone-${index}`);
+            zone.classList.remove('gray-filter');
+            
+            const avatar = document.getElementById(`avatar-${index}`);
+            avatar.innerText = data.endEmoji;
+            avatar.classList.add('happy-anim');
+            
+            document.getElementById(`bubble-${index}`).innerText = data.bubbleEnd;
+            
+            // Mostrar decoraciones
+            const decors = zone.querySelectorAll('.decor');
+            decors.forEach(d => d.classList.add('bloomed'));
 
-  // =====================================================
-  // SETTINGS PANEL (accesibilidad persistente en sesión)
-  // =====================================================
-  document.getElementById('btnSettings').addEventListener('click', ()=>{
-    settingsPanel.style.display = settingsPanel.style.display==='block' ? 'none' : 'block';
-  });
-  document.getElementById('toggleContrast').addEventListener('change', e=>{ state.accessibility.contrast = e.target.checked; render(); });
-  document.getElementById('toggleDaltonic').addEventListener('change', e=>{ state.accessibility.daltonic = e.target.checked; render(); });
-  document.getElementById('toggleSubs').addEventListener('change', e=>{ state.accessibility.subs = e.target.checked; if (!e.target.checked) subsEl.style.display='none'; });
-  document.getElementById('toggleVoice').addEventListener('change', e=>{ state.accessibility.voice = e.target.checked; if (!e.target.checked) window.speechSynthesis.cancel(); });
-  document.getElementById('toggleMusic').addEventListener('change', e=>{ state.accessibility.music = e.target.checked; ensureAudio(); updateMusicByJoy(); });
+            showMessage(data.msgCorrect, true);
 
-  // Iniciar
-  render();
-  </script>
+            completedChars++;
+            
+            // Verificar fin de nivel
+            if (completedChars === 3) {
+                handleLevelComplete();
+            }
+        }
+
+        function handleLevelComplete() {
+            isLevelCompleted = true;
+            
+            // Efecto global
+            document.getElementById('bg-sky').classList.remove('gray-filter');
+            document.getElementById('bg-ground').classList.remove('gray-filter');
+            
+            // Sonido victoria
+            setTimeout(() => {
+                playMagicSound();
+                setTimeout(playMagicSound, 200);
+            }, 500);
+
+            // Mostrar Modal
+            setTimeout(() => {
+                const modal = document.getElementById('modal-overlay');
+                const title = document.getElementById('modal-title');
+                const msg = document.getElementById('modal-msg');
+                const btn = document.getElementById('modal-btn');
+
+                modal.style.display = 'flex';
+                
+                if (currentLevelIndex < LEVELS_DATA.length - 1) {
+                    title.innerText = "¡Nivel Completado!";
+                    msg.innerText = "El jardín está feliz. ¿Vamos al siguiente reto?";
+                    btn.innerText = "Siguiente Nivel ➡️";
+                    btn.onclick = nextLevel;
+                } else {
+                    title.innerText = "¡Maestro de la Empatía!";
+                    msg.innerText = "Has completado todos los mundos. ¡Felicidades!";
+                    btn.innerText = "Reiniciar Juego 🔄";
+                    btn.onclick = () => location.reload();
+                }
+            }, 1500);
+        }
+
+        function nextLevel() {
+            document.getElementById('modal-overlay').style.display = 'none';
+            if (currentLevelIndex < LEVELS_DATA.length - 1) {
+                loadLevel(currentLevelIndex + 1);
+            }
+        }
+
+        function showMessage(text, success) {
+            const toast = document.getElementById('message-toast');
+            toast.innerText = text;
+            toast.style.background = success ? 'rgba(39, 174, 96, 0.9)' : 'rgba(192, 57, 43, 0.9)';
+            toast.style.opacity = '1';
+            setTimeout(() => toast.style.opacity = '0', 2500);
+        }
+
+        /* --- AUDIO --- */
+        function initAudio() {
+            if (!audioCtx) audioCtx = new AudioContext();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+        }
+
+        function playMagicSound() {
+            if(!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(440, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.5);
+            
+            gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+            
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.5);
+        }
+
+        function playErrorSound() {
+            if(!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+            osc.frequency.linearRampToValueAtTime(50, audioCtx.currentTime + 0.3);
+            
+            gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+            gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+            
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.3);
+        }
+
+    </script>
 </body>
 </html>
