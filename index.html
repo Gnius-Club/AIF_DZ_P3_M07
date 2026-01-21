@@ -2,441 +2,602 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Playbook-P3-TM07</title>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
-    </head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>El Jardín de la Amistad: Edición Master</title>
+    <style>
+        /* --- ESTILOS GENERALES --- */
+        * { box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; font-family: 'Segoe UI', sans-serif; }
+
+        /* --- FONDO --- */
+        #game-world {
+            position: relative; width: 100%; height: 100%; display: flex; flex-direction: column; overflow: hidden;
+            transition: background 1s;
+        }
+        
+        /* Filtros */
+        .gray-filter { filter: grayscale(100%) contrast(0.9); transition: filter 1s ease; }
+
+        /* Capas de Fondo Dinámicas */
+        .sky { flex: 2; background: linear-gradient(to bottom, #87CEEB, #E0F7FA); position: relative; z-index: 1; transition: background 1s;}
+        .ground { flex: 1; background: linear-gradient(to bottom, #7CFC00, #228B22); position: relative; z-index: 2; margin-bottom: 90px; transition: background 1s;}
+
+        /* Variaciones de Nivel (Clases aplicadas por JS) */
+        .level-2 .sky { background: linear-gradient(to bottom, #5f788a, #aab7b8); } /* Nublado */
+        .level-2 .ground { background: linear-gradient(to bottom, #556B2F, #2F4F4F); }
+        .level-3 .sky { background: linear-gradient(to bottom, #FFDAB9, #FFEFD5); } /* Atardecer */
+        .level-3 .ground { background: linear-gradient(to bottom, #deb887, #8B4513); } /* Tierra/Parquet */
+
+        /* Nubes / Elementos flotantes */
+        .cloud {
+            position: absolute; background: #fff; border-radius: 50px; opacity: 0.8;
+            animation: floatCloud 25s infinite linear;
+        }
+        .cloud::after, .cloud::before { content: ''; position: absolute; background: #fff; border-radius: 50%; }
+        .c1 { width: 100px; height: 40px; top: 10%; left: -10%; }
+        .c1::after { width: 50px; height: 50px; top: -25px; left: 15px; }
+        .c1::before { width: 40px; height: 40px; top: -15px; left: 50px; }
+        @keyframes floatCloud { 0% { transform: translateX(-150px); } 100% { transform: translateX(120vw); } }
+
+        /* --- PERSONAJES --- */
+        .characters-container {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; display: flex; justify-content: space-around; align-items: flex-end;
+            padding-bottom: 130px; z-index: 10;
+        }
+        .char-zone {
+            position: relative; width: 30%; height: 320px;
+            display: flex; flex-direction: column; align-items: center; justify-content: flex-end;
+            pointer-events: auto; transition: transform 0.3s ease;
+        }
+        .avatar { font-size: 4.5rem; transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 12; cursor: pointer; }
+        
+        .bubble {
+            background: white; padding: 10px 12px; border-radius: 15px; position: absolute; top: 10px;
+            font-size: 0.85rem; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            max-width: 140px; min-width: 100px; transition: opacity 0.5s; font-weight: bold; color: #333;
+        }
+        .bubble::after {
+            content: ''; position: absolute; bottom: -10px; left: 50%; transform: translateX(-50%);
+            border-width: 10px 10px 0; border-style: solid; border-color: white transparent transparent transparent;
+        }
+
+        /* Efectos Decorativos */
+        .decor {
+            position: absolute; font-size: 2.5rem; opacity: 0; transform: scale(0);
+            transition: all 0.6s cubic-bezier(0.68, -0.55, 0.27, 1.55); z-index: 11;
+        }
+        .decor.bloomed { opacity: 1; transform: scale(1); }
+        .happy-anim { animation: happyJump 0.6s ease infinite; }
+        @keyframes happyJump { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-20px); } }
+
+        /* --- UI SEMILLAS --- */
+        .seed-bar {
+            position: absolute; bottom: 0; left: 0; width: 100%; height: 110px;
+            background: rgba(255, 255, 255, 0.95); border-top: 5px solid #8B4513;
+            display: flex; justify-content: space-around; align-items: center; z-index: 100;
+            box-shadow: 0 -5px 15px rgba(0,0,0,0.2); padding-bottom: 10px;
+        }
+        .seed-container { display: flex; flex-direction: column; align-items: center; width: 22%; }
+        
+        .seed {
+            width: 55px; height: 55px; border-radius: 50%; display: flex; justify-content: center; align-items: center;
+            font-size: 1.8rem; cursor: grab; transition: transform 0.2s; position: relative;
+            background: #ddd; border: 3px solid #999; box-shadow: 0 4px 5px rgba(0,0,0,0.2);
+        }
+        .seed:active { cursor: grabbing; transform: scale(1.1); }
+        
+        .seed-label { font-size: 0.75rem; margin-top: 6px; font-weight: bold; color: #444; text-align: center; line-height: 1.1; }
+
+        /* Colores de Semillas */
+        .seed[data-color="orange"] { background: #FFAF40; border-color: #d35400; }
+        .seed[data-color="yellow"] { background: #FFF200; border-color: #f39c12; }
+        .seed[data-color="green"]  { background: #7CFC00; border-color: #27ae60; }
+        .seed[data-color="blue"]   { background: #3498db; border-color: #2980b9; }
+        .seed[data-color="pink"]   { background: #FFB7B2; border-color: #E74C3C; } /* Amor/Consuelo */
+        .seed[data-color="purple"] { background: #D2B4DE; border-color: #8E44AD; } /* Ayuda */
+        .seed[data-color="teal"]   { background: #A2D9CE; border-color: #16A085; } /* Calma */
+        .seed[data-color="red"]    { background: #ff6b6b; border-color: #c0392b; } /* Distractor */
+
+        /* Clon arrastrable */
+        .dragging-clone {
+            position: fixed; pointer-events: none; z-index: 1000; width: 70px; height: 70px;
+            border-radius: 50%; display: flex; justify-content: center; align-items: center;
+            font-size: 2.2rem; opacity: 0.9; box-shadow: 0 10px 20px rgba(0,0,0,0.4);
+        }
+
+        /* --- MENSAJES --- */
+        #level-indicator {
+            position: absolute; top: 10px; left: 10px; background: rgba(255,255,255,0.8);
+            padding: 5px 15px; border-radius: 20px; font-weight: bold; color: #333; z-index: 50;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        #message-toast {
+            position: absolute; top: 20%; left: 50%; transform: translateX(-50%);
+            background: rgba(0,0,0,0.8); color: white; padding: 12px 25px; border-radius: 25px;
+            font-size: 1.1rem; opacity: 0; pointer-events: none; transition: opacity 0.3s;
+            z-index: 200; text-align: center; width: 80%;
+        }
+
+        #modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.7); display: none; justify-content: center; align-items: center;
+            flex-direction: column; z-index: 300; backdrop-filter: blur(5px); animation: fadeIn 0.5s;
+        }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        .modal-content {
+            background: white; padding: 30px; border-radius: 20px; text-align: center;
+            max-width: 90%; width: 400px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        .modal-content h2 { margin: 0 0 15px; color: #2ecc71; font-size: 2rem; }
+        .modal-content p { font-size: 1.2rem; color: #555; margin-bottom: 25px; }
+        
+        button.btn-action {
+            background: #3498db; color: white; border: none; padding: 12px 25px;
+            font-size: 1.2rem; border-radius: 10px; cursor: pointer;
+            box-shadow: 0 4px 0 #2980b9; transition: transform 0.1s; width: 100%;
+        }
+        button.btn-action:active { transform: translateY(4px); box-shadow: none; }
+
+        @media (max-width: 600px) {
+            .char-zone { width: 32%; }
+            .avatar { font-size: 3.5rem; }
+            .bubble { font-size: 0.7rem; top: 60px; min-width: auto; }
+            .seed { width: 45px; height: 45px; font-size: 1.4rem; }
+            .seed-bar { height: 95px; }
+        }
+    </style>
+</head>
 <body>
-    <header>
-        <h1><span class="book-icon">📋</span> <strong>Playbook: Misión 7 - 3ero de Primaria</strong></h1>
-        <div class="header-widgets">
-            <div class="timer-container">
-                <span id="global-timer">⏱️ 40:00</span>
-                <button id="global-start-stop">Start</button>
-                <button id="global-reset">Reset</button>
-            </div>
-            <div class="theme-toggle">
-                <i class="fas fa-sun"></i>
-                <label class="switch">
-                    <input type="checkbox" id="theme-toggle-input">
-                    <span class="slider round"></span>
-                </label>
-                <i class="fas fa-moon"></i>
-            </div>
+
+    <!-- MUNDO -->
+    <div id="game-world">
+        <div id="level-indicator">Nivel 1</div>
+        <div class="sky gray-filter" id="bg-sky">
+            <div class="cloud c1"></div>
         </div>
-    </header>
-    <div class="main-container">
-        <aside class="activity-list">
-            <h2>Actividades</h2>
-            <ul>
-                <li><a href="#activity-0">📝</a></li>
-                <li><a href="#activity-1">1</a></li>
-                <li><a href="#activity-2">2</a></li>
-                <li><a href="#activity-3">3</a></li>
-                <li><a href="#activity-4">4</a></li>
-                <li><a href="#activity-5">5</a></li>
-            </ul>
-        </aside>
-        <main class="content">
-            <div class="progress-bar">
-                <div class="progress"></div>
-            </div>
-            <!-- ACTIVIDAD 0: DE UN VISTAZO -->
-            <div class="activity-card" id="activity-0">
-                <h2><span class="book-icon">📝</span> De un Vistazo: Comando Central</h2>
-                <p class="overview-subtitle">Todo lo que necesitas para preparar y ejecutar esta misión en minutos.</p>
-                
-                <div class="command-section">
-                    <h3>🎯 Objetivo de Aprendizaje</h3>
-                    <div class="objective-box">
-                        <p><strong>Los estudiantes podrán:</strong> Usar el Micro:Bit para detectar movimientos con el acelerómetro y mostrar iconos en los LEDs para reaccionar a gestos y comprender que los sensores funcionan como sentidos que permiten a las máquinas tomar decisiones programadas.</p>
-                    </div>
-                </div>
-                <div class="command-section xolo-prompt">
-                    <h3>🤖 Prompt de Referencia para XOLO (Solo para Maestro)</h3>
-                    <div class="prompt-box">
-                        <div class="prompt-header">
-                            <span class="prompt-label">⚠️ NOTA: XOLO ya conoce el tema de esta misión. Este prompt es SOLO de referencia en caso de emergencia técnica:</span>
-                            <button class="copy-btn" onclick="copyPrompt('main-prompt')">
-                                <i class="fas fa-copy"></i> Copiar
-                            </button>
-                        </div>
-                        <pre id="main-prompt">Explícame qué es un sensor y por qué el Micro:bit puede “sentir” movimientos con el acelerómetro. Enséñame los gestos predefinidos (agitado, cara arriba, cara abajo, inclinado) y cómo se convierten en condiciones dentro de MakeCode. Después guíame a leer un GCS que diga algo como: “SI se agita → mostrar icono”, y ayúdame a traducirlo a bloques. Finalmente ayúdame a entender por qué esto se parece a cómo un sistema inteligente detecta cambios para reaccionar.</pre>
-                    </div>
-                </div>
-                <div class="command-section">
-                    <h3>⚡ Puntos Esenciales de la Misión</h3>
-                    <div class="essentials-grid">
-                        <div class="essential-card">
-                            <div class="essential-icon">🎓</div>
-                            <h4>Concepto Clave</h4>
-                            <p>Sensores como sentidos: Son partes de una máquina que le permiten sentir lo que pasa a su alrededor, como cuando nosotros sentimos un empujón o el frío.</p>
-                        </div>
-                        <div class="essential-card">
-                            <div class="essential-icon">🔧</div>
-                            <h4>Habilidad Técnica</h4>
-                            <p>Usar el Micro:Bit para detectar cuando se agita o se inclina.</p>
-                        </div>
-                        <div class="essential-card">
-                            <div class="essential-icon">🧪</div>
-                            <h4>Experimentación</h4>
-                            <p>Probar con diferentes gestos (agitado, cara arriba, cara abajo) para entender cómo reacciona el programa.</p>
-                        </div>
-                        <div class="essential-card">
-                            <div class="essential-icon">💬</div>
-                            <h4>Interacción con XOLO</h4>
-                            <p>XOLO ya conoce a cada estudiante y el tema de hoy. Solo abren el chat y comienzan a aprender. Tú guías el timing y motivación.</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="command-section">
-                    <h3>📦 Checklist de Materiales</h3>
-                    <div class="materials-checklist">
-                        <label><input type="checkbox"> Proyector/pantalla + presentación (5 diapositivas)</label>
-                        <label><input type="checkbox"> Internet estable + Gnius Space con XOLO activo</label>
-                        <label><input type="checkbox"> Micro:Bit (1 por cada 2 estudiantes)</label>
-                        <label><input type="checkbox"> Acceso a MakeCode (https://makecode.microbit.org/)</label>
-                        <label><input type="checkbox"> Cable USB o portapilas para Micro:Bit</label>
-                        <label><input type="checkbox"> ⚠️ Esta misión usa programación con BLOQUES en MakeCode</label>
-                        <label><input type="checkbox"> 📋 No se requiere extensión adicional para esta misión.</label>
-                    </div>
-                    <p class="care-reminder"><strong>🛡️ Cuidado del equipo:</strong> No doblar el Micro:Bit, verificar que la batería esté conectada y desconectar con cuidado al terminar.</p>
-                </div>
-                <div class="command-section">
-                    <h3>🗓️ Secuencia de la Misión (40 min)</h3>
-                    <div class="timeline">
-                        <div class="timeline-item">
-                            <div class="timeline-dot">1</div>
-                            <div class="timeline-content">
-                                <strong>Intro a la Misión</strong>
-                                <span class="time-badge">2 min</span>
-                                <p>Bienvenida, I Can Statement y contexto de la misión.</p>
-                            </div>
-                        </div>
-                        <div class="timeline-item">
-                            <div class="timeline-dot">2</div>
-                            <div class="timeline-content">
-                                <strong>A.I. Gym</strong>
-                                <span class="time-badge">8 min</span>
-                                <p>Los estudiantes abren el chat con XOLO y aprenden sobre los sensores y el acelerómetro (sin prompt específico).</p>
-                            </div>
-                        </div>
-                        <div class="timeline-item">
-                            <div class="timeline-dot">3</div>
-                            <div class="timeline-content">
-                                <strong>Brain Spark</strong>
-                                <span class="time-badge">20 min</span>
-                                <p>Idear, construir y experimentar un programa con XOLO.</p>
-                            </div>
-                        </div>
-                        <div class="timeline-item">
-                            <div class="timeline-dot">4</div>
-                            <div class="timeline-content">
-                                <strong>Gnius STORM - Compartir</strong>
-                                <span class="time-badge">5 min</span>
-                                <p>Demostración y reflexión en parejas.</p>
-                            </div>
-                        </div>
-                        <div class="timeline-item">
-                            <div class="timeline-dot">5</div>
-                            <div class="timeline-content">
-                                <strong>Entrega de Evidencias</strong>
-                                <span class="time-badge">5 min</span>
-                                <p>Subir capturas a Gnius Space y finalizar misión.</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="command-section">
-                    <h3>🚨 Resolución Rápida de Problemas</h3>
-                    <div class="troubleshooting-list">
-                        <ul>
-                            <li><strong>Si los alumnos no pueden ingresar a Gnius Space:</strong> Activa XOLO SOS en <a href="https://xolo.gnius.club" target="_blank">xolo.gnius.club</a> para continuar la misión sin interrumpir la clase.</li>
-                            <li><strong>Si el Micro:Bit no muestra nada:</strong> Verificar que el cable USB esté bien conectado o que las pilas tengan carga.</li>
-<li><strong>Si no detecta el gesto de agitado:</strong> Asegurarse de que el bloque "si agitado" esté siendo usado correctamente en MakeCode.</li>
-<li><strong>Si hay errores en el código:</strong> Recordar a los estudiantes que XOLO puede ayudar a depurar. Pídeles que copien el error y se lo muestren a XOLO.</li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-            <!-- ACTIVIDAD 1: INTRO A LA MISIÓN -->
-            <div class="activity-card" id="activity-1">
-                <div class="activity-header">
-                    <h2>🚀 Actividad 1: Intro a la Misión</h2>
-                    <div class="activity-timer">
-                        <span class="activity-duration">⏱️ 2:00</span>
-                        <button class="timer-start-btn" data-duration="120">Iniciar</button>
-                    </div>
-                </div>
-                <div class="roles-section">
-                    <div class="role-card role-teacher">
-                        <h4>👨‍🏫 Rol del Maestro</h4>
-                        <ul>
-                            <li>Dar la bienvenida con energía.</li>
-                            <li>Pedir a los alumnos que ingresen a Gnius Space.</li>
-                            <li>Proyecta diapositiva 1 con el I Can Statement.</li>
-                            <li>Motiva: "¡Hoy le daremos sentidos de superhéroe a sus Micro:Bits!".</li>
-                        </ul>
-                    </div>
-                    <div class="role-card role-xolo">
-                        <h4>🤖 Rol de XOLO</h4>
-                        <ul>
-                            <li>XOLO ya está listo y conoce a cada estudiante.</li>
-                            <li>Sabe que hoy toca aprender sobre los sensores y cómo el Micro:Bit siente el movimiento..</li>
-                        </ul>
-                    </div>
-                    <div class="role-card role-student">
-                        <h4>👦 Rol del Alumno</h4>
-                        <ul>
-                            <li>Escucha la misión del día.</li>
-                            <li>Loguearse en Gnius Space.</li>
-                            <li>Preparación para trabajar en parejas.</li>
-                        </ul>
-                    </div>
-                </div>
-                <div class="slide-reference">
-                    <h4>📊 Diapositiva 1: I Can Statement</h4>
-                    <div class="slide-content">
-                        <p><strong>🎯 Hoy seré capaz de:</strong></p>
-                        <p class="highlight-text">🤖 A usar sensores de movimiento para que el Micro:Bit tome decisiones.</p>
-                        <p><strong>Aplicación real:</strong> Los teléfonos inteligentes en nuestros bolsillos usan esta tecnología para saber cuándo girar la pantalla o contar nuestros pasos.</p>
-                        <p><strong>Tu aliado:</strong> XOLO ya sabe qué vas a aprender hoy. ¡Solo abre el chat y comienza!</p>
-                    </div>
-                </div>
-            </div>
-            <!-- ACTIVIDAD 2: A.I. GYM -->
-            <div class="activity-card" id="activity-2">
-                <div class="activity-header">
-                    <h2>🧠 Actividad 2: A.I. Gym</h2>
-                    <div class="activity-timer">
-                        <span class="activity-duration">⏱️ 8:00</span>
-                        <button class="timer-start-btn" data-duration="480">Iniciar</button>
-                    </div>
-                </div>
-                <div class="roles-section">
-                    <div class="role-card role-teacher">
-                        <h4>👨‍🏫 Rol del Maestro</h4>
-                        <ul>
-                            <li>Proyecta diapositiva 2.</li>
-                            <li>Indica: "Abran el chat con XOLO y salúdenlo. Él ya sabe qué les va a enseñar hoy."</li>
-                            <li>Circula para asegurar que todos interactúan con XOLO.</li>
-                            <li>Si alguien tiene dudas, recuérdale: "Pregúntale a XOLO, él te puede explicar de otra forma".</li>
-                        </ul>
-                    </div>
-                    <div class="role-card role-xolo">
-                        <h4>🤖 Rol de XOLO</h4>
-                        <p class="xolo-status">✅ XOLO ACTIVO</p>
-                        <ul>
-                            <li>Reconoce al estudiante y sus preferencias de aprendizaje.</li>
-                            <li>Explica cómo el acelerómetro permite al Micro:Bit sentir cuando lo mueven.</li>
-                            <li>Introduce el concepto de sensores como si fueran los sentidos del robot.</li>
-                            <li>Responde dudas sobre los conceptos.</li>
-                        </ul>
-                    </div>
-                    <div class="role-card role-student">
-                        <h4>👦 Rol del Alumno</h4>
-                        <ul>
-                            <li>Abrir el chat con XOLO y saludarlo.</li>
-                            <li>Aprender a usar el Micro:Bit para detectar gestos.</li>
-                            <li>Aprender sobre cómo las máquinas toman decisiones basadas en lo que sienten.</li>
-                            <li>Despejar todas sus dudas preguntando a XOLO.</li>
-                        </ul>
-                    </div>
-                </div>
-                <div class="slide-reference">
-                    <h4>📊 Diapositiva 2: A.I. GYM</h4>
-                    <div class="slide-content">
-                        <p><strong>💬 Abre el chat con XOLO y salúdalo:</strong></p>
-                        <div class="prompt-box">
-                            <pre>"¡Hola XOLO! Estoy listo para aprender."</pre>
-                        </div>
-                        <p class="highlight-text" style="margin-top: 1rem;">✨ XOLO ya sabe quién eres y qué tema toca hoy. ¡Solo empieza a conversar!</p>
-                        <p class="highlight-text">🎯 Objetivo: Aprender a usar el acelerómetro para detectar gestos y entender los sensores.</p>
-                    </div>
-                </div>
-                
-                <div class="optional-script">
-                    <button class="collapsible-button">📖 Ver guion detallado (opcional)</button>
-                    <div class="collapsible-content">
-                        <p class="dialogue assistant">¡Hola a todos! Ahora vamos a descubrir algo increíble: ¿sabían que sus Micro:Bits pueden sentir? Vamos a entrar a Gnius Space, abran el chat con XOLO y simplemente salúdenlo. XOLO ya los conoce y sabe exactamente qué les va a enseñar hoy sobre los sensores y el acelerómetro. No necesitan escribir un prompt especial, solo empiecen a platicar con él. Él les explicará cómo el Micro:Bit usa sus "sentidos" para saber si lo están agitando. ¡Pregúntenle todo lo que quieran!</p>
-                    </div>
-                </div>
-            </div>
-            <!-- ACTIVIDAD 3: BRAIN SPARK -->
-            <div class="activity-card" id="activity-3">
-                <div class="activity-header">
-                    <h2>💡 Actividad 3: Brain Spark</h2>
-                    <div class="activity-timer">
-                        <span class="activity-duration">⏱️ 20:00</span>
-                        <button class="timer-start-btn" data-duration="1200">Iniciar</button>
-                    </div>
-                </div>
-                <div class="roles-section">
-                    <div class="role-card role-teacher">
-                        <h4>👨‍🏫 Rol del Maestro</h4>
-                        <ul>
-                            <li>Proyecta la diapositiva 3.</li>
-                            <li>Indica: "Pidan a XOLO que los ayude a idear un proyecto. Cuando tengan su GCS, pásenlo a bloques en MakeCode, prueben en el simulador y luego con el hardware real".</li>
-                            <li>Entrega por parejas los Micro:Bits conforme los alumnos prueben su GCS en el simulador.</li>
-                            <li>Si hay errores, recuerda: "Pregúntenle a XOLO, él los ayuda a depurar".</li>
-                        </ul>
-                    </div>
-                    <div class="role-card role-xolo">
-                        <h4>🤖 Rol de XOLO</h4>
-                        <p class="xolo-status">✅ XOLO ACTIVO</p>
-                        <ul>
-                            <li>Ayuda a desarrollar una idea y un VIBE para crear un oráculo mágico.</li>
-                            <li>Entrega el GCS de la idea del genio.</li>
-                            <li>Resuelve errores de sintaxis o lógica.</li>
-                        </ul>
-                    </div>
-                    <div class="role-card role-student">
-                        <h4>👦 Rol del Alumno</h4>
-                        <ul>
-                            <li>Trabajar con XOLO una idea y un VIBE para usar el acelerómetro como un oráculo.</li>
-                            <li>Traducir el GCS de XOLO a bloques en MakeCode.</li>
-                            <li>Depurar su programa con XOLO si hay errores.</li>
-                            <li>Conectar su Micro:Bit y probar las respuestas al agitarlo.</li>
-                        </ul>
-                    </div>
-                </div>
-                <div class="slide-reference">
-                    <h4>📊 Diapositiva 3: Brain Spark</h4>
-                    <div class="slide-content">
-                        <p><strong>1. 💬 Pide a XOLO que te ayude a crear:</strong></p>
-                        <div class="prompt-box">
-                            <pre>"Ayúdame a idear un proyecto aplicado en MakeCode donde el Micro:bit sea un “oráculo” o “bola mágica” que al agitarse muestre respuestas como Sí/No/Quizás. Dame una vibe divertida (ej. “oráculo misterioso”, “adivino robot”, “amuleto mágico”), luego genera el GCS y conviértelo a bloques de MakeCode con instrucciones claras para construirlo."</pre>
-                        </div>
-                        <p style="margin-top: 1.5rem;"><strong>2. 🔬 Experimenta y descubre con tu programa:</strong></p>
-                        <ul>
-                            <li>¿El Micro:Bit muestra la respuesta cada vez que lo agitas?</li>
-                            <li>¿Qué pasa si lo agitas muy suave o muy fuerte?</li>
-                            <li>¿Funciona igual si lo pones cara abajo que si lo agitas?</li>
-                            <li>¿Cómo ayudan los sensores a que el Micro:Bit sepa qué decisión tomar (qué respuesta mostrar)?</li>
-                            <li>Si el Micro:Bit solo reacciona porque tú lo programaste, ¿en qué se parece esto a cómo nosotros reaccionamos a lo que vemos o oímos?</li>
-                        </ul>
-                    </div>
-                </div>
-                <div class="optional-script">
-                    <button class="collapsible-button">📖 Ver guion detallado (opcional)</button>
-                    <div class="collapsible-content">
-                        <p class="dialogue assistant">¡Es hora de crear nuestra propia magia tecnológica! Vamos a usar lo que aprendimos para convertir el Micro:Bit en un oráculo que adivina el futuro. El flujo es sencillo: platiquen con XOLO para definir el estilo de su oráculo, obtengan su código secreto (GCS), pásenlo a bloques en MakeCode y experimenten. Por ejemplo, podrían hacer un "Adivino Robot" que te diga si hoy habrá tarea. Prueben las preguntas de experimentación para ver cómo reacciona su sensor. Cuando su simulador funcione, les entregaré su Micro:Bit real. Si tienen errores o dudas, pregúntenle a XOLO, él los ayudará a depurar.</p>
-                    </div>
-                </div>
-                <div class="challenge-prompt">
-                    <h4>🚀 Prompt de Desafío (para quienes terminen rápido)</h4>
-                    <div class="prompt-box">
-                        <p><strong>Si ya experimentaste con todo, pregunta a XOLO:</strong></p>
-                        <p class="challenge-text">"Ya probé con el oráculo de agitado. ¿Puedes enseñarme cómo hacer que mi Micro:Bit muestre una cara triste si lo pongo cara abajo y una feliz si está cara arriba?"</p>
-                    </div>
-                </div>
-            </div>
-            <!-- ACTIVIDAD 4: GNIUS STORM - COMPARTIR -->
-            <div class="activity-card" id="activity-4">
-                <div class="activity-header">
-                    <h2>⚡ Actividad 4: Gnius STORM - Compartir y Reflexionar</h2>
-                    <div class="activity-timer">
-                        <span class="activity-duration">⏱️ 5:00</span>
-                        <button class="timer-start-btn" data-duration="300">Iniciar</button>
-                    </div>
-                </div>
-                <div class="roles-section">
-                    <div class="role-card role-teacher">
-                        <h4>👨‍🏫 Rol del Maestro</h4>
-                        <ul>
-                            <li>Organiza las parejas para compartir.</li>
-                            <li>Gestiona los tiempos: 2 min demo + 2 min reflexión + 1 min cierre.</li>
-                            <li>Facilita retroalimentación constructiva.</li>
-                            <li>Cierra con reflexión sobre aplicaciones reales.</li>
-                        </ul>
-                    </div>
-                    <div class="role-card role-xolo">
-                        <h4>🤖 Rol de XOLO</h4>
-                        <p class="xolo-status">⏸️ XOLO EN ESPERA</p>
-                        <ul>
-                            <li>Disponible solo si hay dudas finales urgentes.</li>
-                        </ul>
-                    </div>
-                    <div class="role-card role-student">
-                        <h4>👦 Rol del Alumno</h4>
-                        <ul>
-                            <li>Demuestra su programa funcionando a otra pareja.</li>
-                            <li>Explica qué gestos detecta bien su Micro:Bit.</li>
-                            <li>Comparte un descubrimiento interesante.</li>
-                            <li>Da retroalimentación positiva al compañero.</li>
-                        </ul>
-                    </div>
-                </div>
-                <div class="slide-reference">
-                    <h4>📊 Diapositiva 4: Think-Pair-Share</h4>
-                    <div class="slide-content tps-structure">
-                        <div class="tps-phase">
-                            <h4>🤔 THINK (30 seg)</h4>
-                            <p>Reflexión individual: ¿Qué gestos detectó mejor tu Micro:Bit? ¿Qué te sorprendió de cómo 'siente' el movimiento?</p>
-                        </div>
-                        <div class="tps-phase">
-                            <h4>👥 PAIR (2 min)</h4>
-                            <p>Con otra pareja: Demuestren su programa y expliquen su experiencia</p>
-                            <p class="highlight-text">Frase guía: "Mi Micro:Bit detecta cuando lo agito y muestra respuestas. Me sorprendió que puede saber si está cara arriba o cara abajo."</p>
-                        </div>
-                        <div class="tps-phase">
-                            <h4>💬 SHARE (2 min)</h4>
-                            <p>Retroalimentación mutua y cierre del maestro.</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <!-- ACTIVIDAD 5: ENTREGA DE EVIDENCIAS -->
-            <div class="activity-card" id="activity-5">
-                <div class="activity-header">
-                    <h2>✅ Actividad 5: Entrega de Evidencias</h2>
-                    <div class="activity-timer">
-                        <span class="activity-duration">⏱️ 5:00</span>
-                        <button class="timer-start-btn" data-duration="300">Iniciar</button>
-                    </div>
-                </div>
-                <div class="roles-section">
-                    <div class="role-card role-teacher">
-                        <h4>👨‍🏫 Rol del Maestro</h4>
-                        <ul>
-                            <li>Proyecta diapositiva 5 con las instrucciones.</li>
-                            <li>Guía a los estudiantes para tomar las capturas.</li>
-                            <li>Asegura que todos suban sus evidencias a Gnius Space.</li>
-                            <li>Felicita al grupo por completar la misión.</li>
-                        </ul>
-                    </div>
-                    <div class="role-card role-xolo">
-                        <h4>🤖 Rol de XOLO</h4>
-                        <p class="xolo-status">⭕ XOLO FINALIZADO</p>
-                        <ul>
-                            <li>La interacción con XOLO ha terminado para esta misión.</li>
-                        </ul>
-                    </div>
-                    <div class="role-card role-student">
-                        <h4>👦 Rol del Alumno</h4>
-                        <ul>
-                            <li>Tomar screenshot de su código en MakeCode.</li>
-                            <li>Tomar screenshot de su conversación con XOLO.</li>
-                            <li>Subir ambas evidencias a Gnius Space.</li>
-                            <li>Dar click en "Finalizar Misión".</li>
-                        </ul>
-                    </div>
-                </div>
-                <div class="slide-reference">
-                    <h4>📊 Diapositiva 5: ¡Misión Cumplida!</h4>
-                    <div class="slide-content">
-                        <p><strong>📸 Para terminar, sube tus evidencias a Gnius Space:</strong></p>
-                        <ol>
-                            <li>Una captura de pantalla de tu programa final en <strong>MakeCode</strong>.</li>
-                            <li>Una captura de pantalla de tu conversación con <strong>XOLO</strong> donde te dio tu GCS.</li>
-                        </ol>
-                        <p class="highlight-text" style="margin-top: 1rem;">¡No olvides dar click en el botón <strong>"Finalizar Misión"</strong> cuando termines!</p>
-                    </div>
-                </div>
-            </div>
-        </main>
+        <div class="ground gray-filter" id="bg-ground"></div>
+        
+        <!-- Contenedor dinámico de personajes -->
+        <div class="characters-container" id="chars-wrapper"></div>
     </div>
-     <script src="script.js"></script>
+
+    <!-- UI DE SEMILLAS -->
+    <div class="seed-bar" id="seed-bar-wrapper"></div>
+
+    <!-- MENSAJES -->
+    <div id="message-toast"></div>
+
+    <!-- MODAL DE VICTORIA/NIVEL -->
+    <div id="modal-overlay">
+        <div class="modal-content">
+            <h2 id="modal-title">¡Excelente!</h2>
+            <p id="modal-msg">Nivel completado.</p>
+            <button class="btn-action" id="modal-btn" onclick="nextLevel()">Siguiente Nivel ➡️</button>
+        </div>
+    </div>
+
+    <script>
+        /* --- CONFIGURACIÓN DE NIVELES (DATA) --- */
+        const LEVELS_DATA = [
+            {
+                id: 1,
+                name: "El Jardín Inicial",
+                cssClass: "level-1",
+                characters: [
+                    {
+                        id: 'leo', needs: 'encourage', 
+                        startEmoji: '😟', endEmoji: '😄', 
+                        bubbleStart: 'Examen mañana... 📚', bubbleEnd: '¡Sí puedo!', 
+                        decor: '🌻', msgCorrect: '¡Tú puedes, Leo!', msgError: 'Leo necesita confianza.'
+                    },
+                    {
+                        id: 'ana', needs: 'congrats', 
+                        startEmoji: '🎨', endEmoji: '😍', 
+                        bubbleStart: '¡Mi dibujo nuevo!', bubbleEnd: '¡Gracias!', 
+                        decor: '🦋', msgCorrect: '¡Qué talento, Ana!', msgError: 'Ana quiere celebrar.'
+                    },
+                    {
+                        id: 'marco', needs: 'interest', 
+                        startEmoji: '😐', endEmoji: '🙂', 
+                        bubbleStart: '...', bubbleEnd: 'Estoy bien', 
+                        decor: '🌱', msgCorrect: '¡Interés genuino!', msgError: 'Marco se siente solo.'
+                    }
+                ],
+                // Pool de semillas para este nivel (Correctas + 1 Distractor aleatorio)
+                seeds: [
+                    { type: 'encourage', label: 'Ánimo', icon: '💪', color: 'orange' },
+                    { type: 'congrats', label: 'Felicitar', icon: '🎉', color: 'yellow' },
+                    { type: 'interest', label: 'Interés', icon: '🤔', color: 'green' }
+                ]
+            },
+            {
+                id: 2,
+                name: "Parque Lluvioso",
+                cssClass: "level-2", // CSS cambiará fondo a gris/lluvioso
+                characters: [
+                    {
+                        id: 'sofia', needs: 'comfort', 
+                        startEmoji: '😢', endEmoji: '🤗', 
+                        bubbleStart: 'Se rompió mi juguete...', bubbleEnd: 'Ya pasó...', 
+                        decor: '❤️', msgCorrect: '¡Un abrazo ayuda!', msgError: 'Sofia está triste, necesita cariño.'
+                    },
+                    {
+                        id: 'beto', needs: 'calm', 
+                        startEmoji: '😠', endEmoji: '😌', 
+                        bubbleStart: '¡No es justo!', bubbleEnd: 'Respira...', 
+                        decor: '✨', msgCorrect: '¡Calma recuperada!', msgError: 'Beto está enfadado, ayúdalo a calmarse.'
+                    },
+                    {
+                        id: 'lucia', needs: 'help', 
+                        startEmoji: '😵‍💫', endEmoji: '🤓', 
+                        bubbleStart: 'No entiendo esto...', bubbleEnd: '¡Ah, ya veo!', 
+                        decor: '💡', msgCorrect: '¡Gracias por la ayuda!', msgError: 'Lucia está confundida.'
+                    }
+                ],
+                seeds: [
+                    { type: 'comfort', label: 'Consuelo', icon: '🧸', color: 'pink' },
+                    { type: 'calm', label: 'Calma', icon: '🍃', color: 'teal' },
+                    { type: 'help', label: 'Ayudar', icon: '🤝', color: 'purple' }
+                ]
+            },
+            {
+                id: 3,
+                name: "Escuela de Empatía",
+                cssClass: "level-3",
+                characters: [
+                    {
+                        id: 'dani', needs: 'care', 
+                        startEmoji: '🤒', endEmoji: '😊', 
+                        bubbleStart: 'Me siento mal...', bubbleEnd: 'Mejorando', 
+                        decor: '🍵', msgCorrect: '¡Cuidaste a Dani!', msgError: 'Dani está enfermo.'
+                    },
+                    {
+                        id: 'eva', needs: 'protect', 
+                        startEmoji: '😨', endEmoji: '😌', 
+                        bubbleStart: '¡Qué oscuridad!', bubbleEnd: 'Estoy a salvo', 
+                        decor: '🛡️', msgCorrect: '¡Seguridad brindada!', msgError: 'Eva tiene miedo.'
+                    },
+                    {
+                        id: 'tom', needs: 'share', 
+                        startEmoji: '🤤', endEmoji: '😋', 
+                        bubbleStart: 'Tengo hambre...', bubbleEnd: '¡Qué rico!', 
+                        decor: '🍎', msgCorrect: '¡Compartir es cuidar!', msgError: 'Tom necesita compartir.'
+                    }
+                ],
+                seeds: [
+                    { type: 'care', label: 'Cuidar', icon: '💊', color: 'pink' },
+                    { type: 'protect', label: 'Proteger', icon: '🔦', color: 'blue' },
+                    { type: 'share', label: 'Compartir', icon: '🍪', color: 'orange' }
+                ]
+            }
+        ];
+
+        const DISTRACTORS_POOL = [
+            { type: 'joke', label: 'Broma', icon: '🤡', color: 'red' },
+            { type: 'ignore', label: 'Ignorar', icon: '✋', color: 'blue' },
+            { type: 'rush', label: 'Prisa', icon: '🏃', color: 'green' }
+        ];
+
+        /* --- ESTADO GLOBAL --- */
+        let currentLevelIndex = 0;
+        let completedChars = 0;
+        let isLevelCompleted = false;
+
+        // Audio Context
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        let audioCtx;
+
+        /* --- INICIALIZACIÓN --- */
+        window.onload = () => {
+            loadLevel(0);
+        };
+
+        /* --- FUNCIONES DE LÓGICA DEL JUEGO --- */
+
+        function loadLevel(index) {
+            currentLevelIndex = index;
+            const levelData = LEVELS_DATA[index];
+            
+            // 1. Resetear Estado
+            completedChars = 0;
+            isLevelCompleted = false;
+            document.getElementById('level-indicator').innerText = `Nivel ${index + 1}: ${levelData.name}`;
+            
+            // 2. Configurar Fondo (Clases CSS)
+            const world = document.getElementById('game-world');
+            world.className = ''; // Limpiar clases anteriores
+            world.classList.add(levelData.cssClass);
+            
+            // Restaurar filtros grises
+            document.getElementById('bg-sky').classList.add('gray-filter');
+            document.getElementById('bg-ground').classList.add('gray-filter');
+
+            // 3. Renderizar Personajes
+            const charsContainer = document.getElementById('chars-wrapper');
+            charsContainer.innerHTML = ''; // Limpiar anterior
+
+            levelData.characters.forEach((char, i) => {
+                const charHtml = `
+                    <div class="char-zone gray-filter" id="zone-${i}" data-index="${i}" data-needs="${char.needs}">
+                        <div class="bubble" id="bubble-${i}">${char.bubbleStart}</div>
+                        <!-- Decoraciones posicionadas relativamente aleatorias para variar -->
+                        <div class="decor" style="bottom: 10px; left: 10px;">${char.decor}</div>
+                        <div class="decor" style="bottom: 50px; right: 10px;">${char.decor}</div>
+                        <div class="decor" style="top: 100px; left: 20px;">${char.decor}</div>
+                        <div class="avatar" id="avatar-${i}">${char.startEmoji}</div>
+                    </div>
+                `;
+                charsContainer.insertAdjacentHTML('beforeend', charHtml);
+            });
+
+            // 4. Preparar y Mezclar Semillas
+            const seedsContainer = document.getElementById('seed-bar-wrapper');
+            seedsContainer.innerHTML = '';
+            
+            // Copiar las semillas correctas
+            let levelSeeds = [...levelData.seeds];
+            
+            // Añadir 1 distractor aleatorio
+            const randomDistractor = DISTRACTORS_POOL[Math.floor(Math.random() * DISTRACTORS_POOL.length)];
+            levelSeeds.push(randomDistractor);
+
+            // MEZCLAR (Fisher-Yates Shuffle) para que las posiciones sean aleatorias
+            for (let i = levelSeeds.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [levelSeeds[i], levelSeeds[j]] = [levelSeeds[j], levelSeeds[i]];
+            }
+
+            // Renderizar Semillas
+            levelSeeds.forEach(seed => {
+                const seedEl = document.createElement('div');
+                seedEl.className = 'seed-container';
+                seedEl.innerHTML = `
+                    <div class="seed" data-type="${seed.type}" data-color="${seed.color}">
+                        ${seed.icon}
+                    </div>
+                    <div class="seed-label">${seed.label}</div>
+                `;
+                seedsContainer.appendChild(seedEl);
+                
+                // Añadir listeners al elemento .seed recién creado
+                const draggable = seedEl.querySelector('.seed');
+                addDragListeners(draggable);
+            });
+        }
+
+        /* --- DRAG & DROP SYSTEM --- */
+        let draggedItem = null;
+        let clone = null;
+
+        function addDragListeners(el) {
+            el.addEventListener('mousedown', startDrag);
+            el.addEventListener('touchstart', startDrag, {passive: false});
+        }
+
+        function startDrag(e) {
+            e.preventDefault(); 
+            initAudio();
+
+            let clientX, clientY;
+            if (e.type === 'touchstart') {
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+            } else {
+                clientX = e.clientX;
+                clientY = e.clientY;
+            }
+
+            draggedItem = e.target.closest('.seed'); // Asegurar seleccionar el div .seed
+            if(!draggedItem) return;
+
+            // Crear Clon Visual
+            clone = draggedItem.cloneNode(true);
+            clone.classList.add('dragging-clone');
+            // Copiar estilos computados clave si es necesario, o confiar en CSS
+            clone.style.background = getComputedStyle(draggedItem).background;
+            clone.style.borderColor = getComputedStyle(draggedItem).borderColor;
+            
+            document.body.appendChild(clone);
+            moveClone(clientX, clientY);
+
+            document.addEventListener('mousemove', onMove);
+            document.addEventListener('mouseup', onEnd);
+            document.addEventListener('touchmove', onMove, {passive: false});
+            document.addEventListener('touchend', onEnd);
+        }
+
+        function onMove(e) {
+            e.preventDefault();
+            let x, y;
+            if (e.type === 'touchmove') {
+                x = e.touches[0].clientX;
+                y = e.touches[0].clientY;
+            } else {
+                x = e.clientX;
+                y = e.clientY;
+            }
+            moveClone(x, y);
+        }
+
+        function moveClone(x, y) {
+            if (clone) {
+                clone.style.left = (x - 35) + 'px';
+                clone.style.top = (y - 35) + 'px';
+            }
+        }
+
+        function onEnd(e) {
+            let x, y;
+            if (e.type === 'touchend') {
+                x = e.changedTouches[0].clientX;
+                y = e.changedTouches[0].clientY;
+            } else {
+                x = e.clientX;
+                y = e.clientY;
+            }
+
+            clone.style.display = 'none';
+            let elemBelow = document.elementFromPoint(x, y);
+            clone.remove();
+            clone = null;
+
+            let dropZone = elemBelow ? elemBelow.closest('.char-zone') : null;
+
+            if (dropZone && draggedItem) {
+                const seedType = draggedItem.dataset.type;
+                const charIndex = parseInt(dropZone.dataset.index);
+                checkInteraction(seedType, charIndex);
+            }
+
+            draggedItem = null;
+            document.removeEventListener('mousemove', onMove);
+            document.removeEventListener('mouseup', onEnd);
+            document.removeEventListener('touchmove', onMove);
+            document.removeEventListener('touchend', onEnd);
+        }
+
+        /* --- VERIFICACIÓN Y LÓGICA DE JUEGO --- */
+        function checkInteraction(seedType, charIndex) {
+            const currentLevel = LEVELS_DATA[currentLevelIndex];
+            const charData = currentLevel.characters[charIndex];
+            const zone = document.getElementById(`zone-${charIndex}`);
+
+            // Si ya está resuelto, ignorar
+            if (!zone.classList.contains('gray-filter')) return;
+
+            if (seedType === charData.needs) {
+                // CORRECTO
+                handleSuccess(charIndex, charData);
+            } else {
+                // INCORRECTO
+                playErrorSound();
+                showMessage(charData.msgError, false);
+            }
+        }
+
+        function handleSuccess(index, data) {
+            playMagicSound();
+            
+            // Actualizar Visuales
+            const zone = document.getElementById(`zone-${index}`);
+            zone.classList.remove('gray-filter');
+            
+            const avatar = document.getElementById(`avatar-${index}`);
+            avatar.innerText = data.endEmoji;
+            avatar.classList.add('happy-anim');
+            
+            document.getElementById(`bubble-${index}`).innerText = data.bubbleEnd;
+            
+            // Mostrar decoraciones
+            const decors = zone.querySelectorAll('.decor');
+            decors.forEach(d => d.classList.add('bloomed'));
+
+            showMessage(data.msgCorrect, true);
+
+            completedChars++;
+            
+            // Verificar fin de nivel
+            if (completedChars === 3) {
+                handleLevelComplete();
+            }
+        }
+
+        function handleLevelComplete() {
+            isLevelCompleted = true;
+            
+            // Efecto global
+            document.getElementById('bg-sky').classList.remove('gray-filter');
+            document.getElementById('bg-ground').classList.remove('gray-filter');
+            
+            // Sonido victoria
+            setTimeout(() => {
+                playMagicSound();
+                setTimeout(playMagicSound, 200);
+            }, 500);
+
+            // Mostrar Modal
+            setTimeout(() => {
+                const modal = document.getElementById('modal-overlay');
+                const title = document.getElementById('modal-title');
+                const msg = document.getElementById('modal-msg');
+                const btn = document.getElementById('modal-btn');
+
+                modal.style.display = 'flex';
+                
+                if (currentLevelIndex < LEVELS_DATA.length - 1) {
+                    title.innerText = "¡Nivel Completado!";
+                    msg.innerText = "El jardín está feliz. ¿Vamos al siguiente reto?";
+                    btn.innerText = "Siguiente Nivel ➡️";
+                    btn.onclick = nextLevel;
+                } else {
+                    title.innerText = "¡Maestro de la Empatía!";
+                    msg.innerText = "Has completado todos los mundos. ¡Felicidades!";
+                    btn.innerText = "Reiniciar Juego 🔄";
+                    btn.onclick = () => location.reload();
+                }
+            }, 1500);
+        }
+
+        function nextLevel() {
+            document.getElementById('modal-overlay').style.display = 'none';
+            if (currentLevelIndex < LEVELS_DATA.length - 1) {
+                loadLevel(currentLevelIndex + 1);
+            }
+        }
+
+        function showMessage(text, success) {
+            const toast = document.getElementById('message-toast');
+            toast.innerText = text;
+            toast.style.background = success ? 'rgba(39, 174, 96, 0.9)' : 'rgba(192, 57, 43, 0.9)';
+            toast.style.opacity = '1';
+            setTimeout(() => toast.style.opacity = '0', 2500);
+        }
+
+        /* --- AUDIO --- */
+        function initAudio() {
+            if (!audioCtx) audioCtx = new AudioContext();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+        }
+
+        function playMagicSound() {
+            if(!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(440, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.5);
+            
+            gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+            
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.5);
+        }
+
+        function playErrorSound() {
+            if(!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+            osc.frequency.linearRampToValueAtTime(50, audioCtx.currentTime + 0.3);
+            
+            gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+            gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+            
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.3);
+        }
+
+    </script>
 </body>
-</html></html>
+</html>
